@@ -16,19 +16,12 @@ CHIP PC {
 
     PARTS:
     Inc16(in = outlop, out = plus);
-    
-    And();
-    
-    // {inc, load, reset}
-    // {0,0,0} -> out
-    // {1,0,0} -> out + 1
-    // {?,1,0} -> in
-    // {?,?,1} -> 0
-    
-    Mux16(a = )
-    
-    Mux4Way16(a = outlop, b = in, c = plus, d = 0, sel = , out = inlop);
 
+    Mux16(a = outlop, b = plus, sel = inc, out = first);
 
-    Register(in = inlop, load = load, out = out, out = outlop);
+    Mux16(a = first, b = in, sel = load, out = second);
+
+    Mux16(a = second, b = false, sel = reset, out = inlop);
+
+    Register(in = inlop, load = true, out = out, out = outlop);
 }
