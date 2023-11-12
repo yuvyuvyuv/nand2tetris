@@ -62,9 +62,9 @@ CHIP ALU {
     Not16(in = output, out = notoutput);
 
     // choose the final output
-    Mux16(a = output, b = notoutput, sel = no, out = out, out[15] = test,out[0..7] = first, out[8..15] = second);
+    Mux16(a = output, b = notoutput, sel = no, out = out, out[15] = ng,out[0..7] = first, out[8..15] = second);
 
-    Or(a = test, b = false, out = ng);
+    //Or(a = test, b = false, out = ng);
 
     Or8Way(in = first, out = check1);
     Or8Way(in = second, out = check2);
