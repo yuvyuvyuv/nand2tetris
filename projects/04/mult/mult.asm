@@ -10,33 +10,33 @@
 //// Replace this comment with your code.
 
 // puts 0 in R2
-// loop R0 times
-//      R2 = R2 + R1 
+// if R1 < 0 stop else
+//      R2 = R2 + R0
+//      R1 = R1 - 1
 
-// adds 1+...+100.
-    @i // i refers to some mem. location.
-    M=1 // i=1
-    @sum // sum refers to some mem. location.
-    M=0 // sum=0
+    @2 
+    M=0 // R2=0
 (LOOP)
-    @i
-    D=M // D=i
+
+
     @1
-    D=D-M // D=i-RAM[1]
+    D=M-1 // D = R1 -1
+
     @END
-    D;JGT // If (i-100)>0 goto END
+    D;JLT // If D<=0 goto END
+    @1
+    M=D // R1 = R1-1 
     @0
     D=M // D=RAM[0]
-    @sum
-    M=D+M // sum=sum+i
-    @i
-    M=M+1 // i=i+1
+    @2
+    M=D+M // R2=R2+R0
+    
     @LOOP
     0;JMP
-    @sum
-    D=M
     @2
-    M=D
-(end)
-    @end
+    D=M
+
+    
+(END)
+    @END
     0;JMP
