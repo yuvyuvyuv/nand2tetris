@@ -1,6 +1,4 @@
-// Tests / illustrates how the VM implementation handles function-call-and-return,
-// by executing the functions in Sys.vm in the VM emulator.
-// In particular, loads and runs the functions in Sys.vm.
+// Test file for NestedCall test.
 
 load Sys.vm,
 output-file NestedCall.out,
@@ -67,6 +65,6 @@ set this 3000,
 set that 4000;
 
 repeat 50 {
-	vmstep;
+  vmstep;
 }
 output;
