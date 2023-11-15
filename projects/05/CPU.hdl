@@ -45,15 +45,16 @@ CHIP CPU {
     PARTS:
     //decoding : “ixxaccccccdddjjj”.
     DMux(in = true, sel = instruction[15],a = Aop,b = Cop);
-    Xor(a = Cop, b = Aop, out = jump);
 
-    
+    // when to load Areg with the ALUout - C-op and its dest is Areg
+    Not(in = instruction[5], out = Adest);
+    And(a = Cop, b = Adest, out = Asel);
     //left most mux
-    Mux16(a = ALUout, b = instruction, sel = Aop, out = Aregin);
+    Mux16(a = ALUout, b = instruction, sel = Asel, out = Aregin);
 
 
-    // A-register - 0dd - do not load - else load
-    Not(in = instruction[5], out = Aload)
+    // A-register - load if A is dest or Aop
+    Or(a = Aop, b = Adest, out = Aload);
     ARegister(in = Aregin, load = Aload, out = Aregout, out[0..14] = addressM);
 
 
@@ -81,42 +82,24 @@ CHIP CPU {
     
 
     //to calculate the jump boolean
-    And(a = ng, b = instruction[2], out = JLT); // out < 0 && jump neg
-    And(a = zr, b = instruction[1], out = JEQ); // out = 0 && jump zr
-
-    And(a = JLT, b = JEQ, out = JLE); //out <= 0 && jump ng or zr
-
     Or(a = ng, b = zr, out = ngORzr);
-
     Not(in = ngORzr, out = pos);
     And(a = pos, b = instruction[0], out = JGT);
+    And(a = zr , b = instruction[1], out = JEQ);
+    And(a = ng , b = instruction[2], out = JLT);
 
-
-    
-
-    Not(in = ng, out = notng);
-    Not(in = zr, out = notzr);
-
-    And(a = notng, b = instruction[0], out = JNE);
-    
-    
-
-
-    
-    And(a = JLT, b = notzr, out = );
-
+    Or(a = JGT, b = JEQ, out = JGE);
+    Or(a = JGE, b = JLT, out = JMP);
 
     // jump if C-op
-    And(a = Cop, b = jumpcheck, out = jump);
+    And(a = Cop, b = JMP, out = jump);
 
     //if jump then load = 1, else inc = 1
-    DMux(in = true, sel = jump, a = PCA, b = PCinc);
+    DMux(in = true, sel = jump, a = PCinc, b = PCA);
     PC(in = Aregout, reset = reset, load = PCA, inc = PCinc, out[0..14] = pc);    
-
 
 
 
     //set writeM if dd1 and C-op
     And(a = Cop, b = instruction[3], out = writeM);
-
 }
