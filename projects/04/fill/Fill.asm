@@ -18,14 +18,20 @@
     @BLACK
     D;JGT
     
-    (W_loop)
-    @D
+
+    @SCREEN
+    D=A
+(WLOP)
+    A=D
     M=0
     D=D+1
-    @W_loop
-    //D-;JMP
-    
+    @KBD
+    D=D-A
     @LOOP
+    D;JGE
+    @KBD
+    D=D+A
+    @WLOP
     0;JMP
 (BLACK)
     //black
@@ -36,9 +42,12 @@
     A=D
     M=-1
     D=D+1
+    @KBD
+    D=D-A
+    @LOOP
+    D;JGE
+    @KBD
+    D=D+A
     @BLOP
     0;JMP
-    
 
-    @LOOP
-    0;JMP

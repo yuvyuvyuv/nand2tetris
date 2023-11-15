@@ -14,4 +14,30 @@
 // Requirements:
 // - Changing R14, R15 is not allowed.
 
-// Put your code here.
+//R0 = max
+//R1 = max index
+//R2 = min
+//R3 = min index
+
+//loop the whole list find the 
+//i is index
+@15
+D=M
+@i
+M=D
+@14
+D=M
+
+    
+(LOOP)
+    A=D
+    
+    D=D+1
+    @KBD
+    D=D-A
+    @LOOP
+    D;JGE
+    @KBD
+    D=D+A
+    @BLOP
+    0;JMP
