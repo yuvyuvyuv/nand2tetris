@@ -21,23 +21,79 @@
 
 //loop the whole list find the 
 //i is index
-@15
+@14
 D=M
 @i
-M=D
-@14
+M=D-1//start 1 before so that we can inc i in the start of the loop 
+@15
 D=M
 
     
 (LOOP)
-    A=D
+    @i
+    M=M+1
+    A=M //i++
+
+    D=M
+    @0
+    D=D-M
+    @MAX
+    D;JGT //check if Arr[i] > max
     
-    D=D+1
-    @KBD
-    D=D-A
+    @i
+    A = M 
+    D=M
+    @2
+    D=D-M
+    @MIN
+    D;JLT //check if Arr[i] < min
+    @CHECK
+    0;JMP
+    
+    (MAX)
+    @0
+    M = M+D
+    @i
+    D = M
+    @1
+    M = D
+    @CHECK
+    0;JMP
+
+    (MIN)
+    @2
+    M = M+D
+    @i
+    D = M
+    @3
+    M = D
+    
+    (CHECK)
+    @14
+    D=M
+    @15
+    D=D+M
+    @i
+    D=D-M
+    @SWAP
+    D;JLE
+
     @LOOP
-    D;JGE
-    @KBD
-    D=D+A
-    @BLOP
+    0;JMP
+
+    (SWAP)
+    @0
+    D = M
+    @3
+    A = M
+    M = D
+    @2
+    D = M
+    @1
+    A = M
+    M = D
+
+
+    (END)
+    @END
     0;JMP
