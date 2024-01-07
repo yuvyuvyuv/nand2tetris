@@ -46,15 +46,12 @@ CHIP CPU {
     //decoding : “ixxaccccccdddjjj”.
     DMux(in = true, sel = instruction[15],a = Aop,b = Cop);
 
-    // when to load Areg with the ALUout - C-op and its dest is Areg
-    Not(in = instruction[5], out = Adest);
-    And(a = Cop, b = Adest, out = Asel);
     //left most mux
-    Mux16(a = ALUout, b = instruction, sel = Asel, out = Aregin);
+    Mux16(a = ALUout, b = instruction, sel = Aop, out = Aregin);
 
 
     // A-register - load if A is dest or Aop
-    Or(a = Aop, b = Adest, out = Aload);
+    Or(a = Aop, b = instruction[5], out = Aload);
     ARegister(in = Aregin, load = Aload, out = Aregout, out[0..14] = addressM);
 
 

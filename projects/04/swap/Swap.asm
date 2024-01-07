@@ -97,3 +97,20 @@ D=M
     (END)
     @END
     0;JMP
+
+    (SWAP)
+    @0
+    D = M
+    @3
+    A = M
+    M = D
+    @2
+    D = M
+    @1
+    A = M
+    M = D
+
+
+    (END)
+    @END
+    0;JMP

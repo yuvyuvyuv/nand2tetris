@@ -38,5 +38,64 @@ CHIP CpuMul {
         pc[15];          // address of next instruction
     
     PARTS:
-    // Put your code here:
+    //exactly the same code as CPU.hdl, change the ALU chip
+
+
+
+    //decoding : “ixxaccccccdddjjj”.
+    DMux(in = true, sel = instruction[15],a = Aop,b = Cop);
+
+    //left most mux
+    Mux16(a = ALUout, b = instruction, sel = Aop, out = Aregin);
+
+
+    // A-register - load if A is dest or Aop
+    Or(a = Aop, b = instruction[5], out = Aload);
+    ARegister(in = Aregin, load = Aload, out = Aregout, out[0..14] = addressM);
+
+
+
+    //right mux - A and M register selection, AM - the c/sel input is the a-bit, instruction[12]
+    Mux16(a = Aregout, b = inM, sel = instruction[12], out = AMout);
+
+
+
+    // D-register - only load when the "d1d" part of instruction And it is an C-op
+    And(a = Cop, b = instruction[4], out = Dload);
+    DRegister(in = ALUout, load = Dload, out = Dregout);
+
+
+
+
+
+    //ALU - the six paramaters inputs are the six c-bit
+    ExtendAlu(x = Dregout, y = AMout, 
+        instruction = instruction[6..14], out = outM, out = ALUout, 
+        zr = zr, ng=ng);
+
+
+    //to calculate the jump boolean
+    Or(a = ng, b = zr, out = ngORzr);
+    Not(in = ngORzr, out = pos);
+    And(a = pos, b = instruction[0], out = JGT);
+    And(a = zr , b = instruction[1], out = JEQ);
+    And(a = ng , b = instruction[2], out = JLT);
+
+    Or(a = JGT, b = JEQ, out = JGE);
+    Or(a = JGE, b = JLT, out = JMP);
+
+    // jump if C-op
+    And(a = Cop, b = JMP, out = jump);
+
+    //if jump then load = 1, else inc = 1
+    DMux(in = true, sel = jump, a = PCinc, b = PCA);
+    PC(in = Aregout, reset = reset, load = PCA, inc = PCinc, out[0..14] = pc);    
+
+
+
+    //set writeM if dd1 and C-op
+    And(a = Cop, b = instruction[3], out = writeM);
+
+
+
 }
