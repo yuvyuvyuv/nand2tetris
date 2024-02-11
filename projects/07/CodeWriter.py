@@ -20,7 +20,28 @@ class CodeWriter:
         # Your code goes here!
         # Note that you can write to output_stream like so:
         # output_stream.write("Hello world! \n")
-        pass
+        self.output = output_stream
+        self.symbols = {
+            "add": "M=D+M",
+            "sub": "M=M-D",
+            "and": "M=M&D",
+            "or": "M=M|D",
+            "neg": "M=-M",
+            "not": "M=!M",
+            "eq": "D;JEQ",
+            "gt": "D;JGT",
+            "lt": "D;JLT",
+            "local": "@LCL",
+            "argument": "@ARG",
+            "this": "@THIS",
+            "that": "@THAT",
+            "constant": "",
+            "static": "",
+            "pointer": "@3",
+            "temp": "@5"
+        }
+        self.label_counter = 0
+        self.set_file_name(output_stream.name)
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -40,7 +61,7 @@ class CodeWriter:
         # the function "translate_file" in Main.py using python's os library,
         # For example, using code similar to:
         # input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
-        pass
+        self.file_name = filename[filename.rindex("\\") + 1:filename.rindex('.')]
 
     def write_arithmetic(self, command: str) -> None:
         """Writes assembly code that is the translation of the given 
@@ -51,8 +72,48 @@ class CodeWriter:
         Args:
             command (str): an arithmetic command.
         """
-        # Your code goes here!
-        pass
+        output = []
+        if command in ["add", "sub", "and", "or"]:
+            # Pop Stack into D.
+            output.append("@SP")
+            output.append("AM=M-1")
+            output.append("D=M")
+            # Access to Stack[-1]
+            output.append("@SP")
+            output.append("A=M-1")
+            # Use the Arithmetic Operator
+            output.append(self.symbols[command])
+        elif command in ["neg", "not"]:
+            # Access to Stack[-1]
+            output.append("@SP")
+            output.append("A=M-1")
+            output.append(self.symbols[command])
+        elif command in ["eq", "gt", "lt"]:
+            jump_label = "CompLabel" + str(self.label_counter)
+            self.label_counter += 1
+            # Pop Stack into D.
+            output.append("@SP")
+            output.append("AM=M-1")
+            output.append("D=M")
+            # Access to Stack[-1]
+            output.append("@SP")
+            output.append("A=M-1")
+            # Calculate the difference
+            output.append("D=M-D")
+            output.append("M=-1")
+            # Load the jump label into A.
+            output.append("@" + jump_label)
+            # Jump if the statement is True.
+            # Else update the Stack to False.
+            output.append(self.symbols[command])
+            # Set the Stack[-1] to False
+            output.append("@SP")
+            output.append("A=M-1")
+            output.append("M=0")
+            # Jump label for the True state.
+            output.append("(" + jump_label + ")")
+        for line in output:
+            self.output.write(f"{line}\n")
 
     def write_push_pop(self, command: str, segment: str, index: int) -> None:
         """Writes assembly code that is the translation of the given 
@@ -61,15 +122,98 @@ class CodeWriter:
         Args:
             command (str): "C_PUSH" or "C_POP".
             segment (str): the memory segment to operate on.
-            index (int): the index in the memory segment.
+            index   (int): the index in the memory segment.
         """
         # Your code goes here!
         # Note: each reference to "static i" appearing in the file Xxx.vm should
         # be translated to the assembly symbol "Xxx.i". In the subsequent
         # assembly process, the Hack assembler will allocate these symbolic
         # variables to the RAM, starting at address 16.
-        pass
 
+        output = []
+        if command == "C_PUSH":
+            if segment == "constant":
+                output.append("@" + str(index))
+                output.append("D=A")
+                output.append("@SP")
+                output.append("AM=M+1")
+                output.append("A=A-1")
+                output.append("M=D")
+            elif segment in ["local", "argument", "this", "that", "temp", "pointer"]:
+                # Put the index value into D.
+                output.append("@" + str(index))
+                output.append("D=A")
+                # Put the base value into A.
+                if segment == "temp" or segment == "pointer":
+                    output.append(self.symbols[segment])
+                else:
+                    # Resolve where the segment refers to.
+                    output.append(self.symbols[segment])
+                    output.append("A=M")
+                # Calculate the source address into A.
+                output.append("A=D+A")
+                # Put the source value into D.
+                output.append("D=M")
+                # Put D value into where SP points to.
+                output.append("@SP")
+                output.append("A=M")
+                output.append("M=D")
+                # Increment the stack pointer.
+                output.append("@SP")
+                output.append("M=M+1")
+            elif segment == "static":
+                # Calculate the source address into A.
+                output.append("@" + self.file_name + "." + str(index))
+                # Put the source value into D.
+                output.append("D=M")
+                # Put D value into where SP points to.
+                output.append("@SP")
+                output.append("A=M")
+                output.append("M=D")
+                # Increment the stack pointer.
+                output.append("@SP")
+                output.append("M=M+1")
+        elif command == "C_POP":
+            if segment in ["local", "argument", "this", "that", "temp", "pointer"]:
+                # Put the index value into D.
+                output.append("@" + str(index))
+                output.append("D=A")
+                # Put the base value into A.
+                if segment == "temp" or segment == "pointer":
+                    output.append(self.symbols[segment])
+                else:
+                    # Resolve where the segment refers to.
+                    output.append(self.symbols[segment])
+                    output.append("A=M")
+                # Calculate the source address into D.
+                output.append("D=D+A")
+                # Put D value into R13 for future use.
+                output.append("@R13")
+                output.append("M=D")
+                # Pop stack value into D.
+                output.append("@SP")
+                output.append("AM=M-1")
+                output.append("D=M")
+                # Put D value into where R13 points to.
+                output.append("@R13")
+                output.append("A=M")
+                output.append("M=D")
+            elif segment == "static":
+                # Pop stack value into D.
+                output.append("@SP")
+                output.append("AM=M-1")
+                output.append("D=M")
+                # Put the source address into A.
+                output.append("@" + self.file_name + "." + str(index))
+                # Put D value into static address.
+                output.append("M=D")
+
+
+        for line in output:
+            self.output.write(f"{line}\n")
+
+        
+    
     def write_label(self, label: str) -> None:
         """Writes assembly code that affects the label command. 
         Let "Xxx.foo" be a function within the file Xxx.vm. The handling of

@@ -22,8 +22,28 @@ def translate_file(
     """
     # Your code goes here!
     # It might be good to start with something like:
-    # parser = Parser(input_file)
-    # code_writer = CodeWriter(output_file)
+    parser = Parser(input_file)
+    code_writer = CodeWriter(output_file)
+    code_writer.set_file_name(input_file.name)
+    while parser.has_more_commands():
+        parser.advance()
+        # Write the current command as a comment to the output file for debugging purposes.
+        # code_writer.comment(parser.current_command)
+        # Determine the current command type.
+        # C_ARITHMETIC, C_PUSH, or C_POP.
+        command_type = parser.command_type()
+        if command_type == "C_ARITHMETIC":
+            # Pass the arithmetic command to the code writer.
+            code_writer.write_arithmetic(parser.arg1())
+        elif command_type in ["C_PUSH", "C_POP"]:
+            # Pass the push/pop command to the code writer with its arguments.
+            argument1 = parser.arg1()
+            argument2 = parser.arg2()
+            code_writer.write_push_pop(command_type, argument1, argument2)
+
+    # Close the output file before exiting.
+    code_writer.output.close()
+    
     pass
 
 
