@@ -227,8 +227,8 @@ class CodeWriter:
         Args:
             label (str): the label to write.
         """
-        # This is irrelevant for project 7,
-        # you will implement this in project 8!
+        label = self.file_name+'.'+label
+        self.output.write(f"({label})\n")
         pass
     
     def write_goto(self, label: str) -> None:
@@ -237,8 +237,8 @@ class CodeWriter:
         Args:
             label (str): the label to go to.
         """
-        # This is irrelevant for project 7,
-        # you will implement this in project 8!
+        self.output.write(f"@{label}\n0;JMP\n")
+
         pass
     
     def write_if(self, label: str) -> None:
@@ -247,8 +247,7 @@ class CodeWriter:
         Args:
             label (str): the label to go to.
         """
-        # This is irrelevant for project 7,
-        # you will implement this in project 8!
+        self.output.write(f"@SP\nAM=M-1\nD=M\n@{label}\nD;JNE\n")
         pass
     
     def write_function(self, function_name: str, n_vars: int) -> None:

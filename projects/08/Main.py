@@ -13,17 +13,46 @@ from CodeWriter import CodeWriter
 
 
 def translate_file(
-        input_file: typing.TextIO, output_file: typing.TextIO,
-        bootstrap: bool) -> None:
+        input_file: typing.TextIO, output_file: typing.TextIO) -> None:
     """Translates a single file.
 
     Args:
         input_file (typing.TextIO): the file to translate.
         output_file (typing.TextIO): writes all output to this file.
-        bootstrap (bool): if this is True, the current file is the 
-            first file we are translating.
     """
     # Your code goes here!
+    # It might be good to start with something like:
+    parser = Parser(input_file)
+    code_writer = CodeWriter(output_file)
+    code_writer.set_file_name(input_file.name)
+    while parser.has_more_commands():
+        parser.advance()
+        # Write the current command as a comment to the output file for debugging purposes.
+        # code_writer.comment(parser.current_command)
+        # Determine the current command type.
+        # C_ARITHMETIC, C_PUSH, or C_POP.
+        command_type = parser.command_type()
+        if command_type == "C_ARITHMETIC":
+            # Pass the arithmetic command to the code writer.
+            code_writer.write_arithmetic(parser.arg1())
+        elif command_type in ["C_PUSH", "C_POP"]:
+            # Pass the push/pop command to the code writer with its arguments.
+            code_writer.write_push_pop(command_type, parser.arg1(), parser.arg2())
+        elif command_type == "C_LABEL":
+            code_writer.write_label(parser.arg1())
+        elif command_type == "C_GOTO":
+            code_writer.write_goto(parser.arg1())
+        elif command_type == "C_IF":
+            code_writer.write_if(parser.arg1())
+        elif command_type == "C_FUNCTION":
+            code_writer.write_function(parser.arg1(), parser.arg2())
+        elif command_type == "C_RETURN":
+            code_writer.write_return()
+        elif command_type == "C_CALL":
+            code_writer.write_call(parser.arg1(), parser.arg2())
+    # Close the output file before exiting.
+    code_writer.output.close()
+    
     pass
 
 
@@ -46,12 +75,10 @@ if "__main__" == __name__:
         files_to_translate = [argument_path]
         output_path, extension = os.path.splitext(argument_path)
     output_path += ".asm"
-    bootstrap = True
     with open(output_path, 'w') as output_file:
         for input_path in files_to_translate:
             filename, extension = os.path.splitext(input_path)
             if extension.lower() != ".vm":
                 continue
             with open(input_path, 'r') as input_file:
-                translate_file(input_file, output_file, bootstrap)
-            bootstrap = False
+                translate_file(input_file, output_file)
