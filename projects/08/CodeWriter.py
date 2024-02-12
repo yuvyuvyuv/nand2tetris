@@ -268,6 +268,10 @@ class CodeWriter:
         # (function_name)       // injects a function entry label into the code
         # repeat n_vars times:  // n_vars = number of local variables
         #   push constant 0     // initializes the local variables to 0
+        function_name = self.file_name+'.'+function_name
+        self.output.write(f"({function_name})\n")
+        for i in range(int(n_vars)):
+            self.output.write("@0\nD=A\n@SP\nAM=M+1\nA=A-1\nM=D\n")
         pass
     
     def write_call(self, function_name: str, n_args: int) -> None:
@@ -298,6 +302,17 @@ class CodeWriter:
         # LCL = SP              // repositions LCL
         # goto function_name    // transfers control to the callee
         # (return_address)      // injects the return address label into the code
+        self.output.write(f"@{self.file_name}.{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write("@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write("@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write("@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write("@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write(f"@{int(n_args)+5}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n")
+        self.output.write("@SP\nD=M\n@LCL\nM=D\n")
+        self.output.write(f"@{function_name}\n0;JMP\n")
+        self.output.write(f"({self.file_name}.{function_name}$ret.{self.label_counter})\n")
+        self.label_counter += 1
+
         pass
     
     def write_return(self) -> None:
@@ -314,4 +329,13 @@ class CodeWriter:
         # ARG = *(frame-3)              // restores ARG for the caller
         # LCL = *(frame-4)              // restores LCL for the caller
         # goto return_address           // go to the return address
+        self.output.write("@LCL\nD=M\n@R13\nM=D\n")  # Save LCL in R13
+        self.output.write("@5\nA=D-A\nD=M\n@R14\nM=D\n")  # Save return address in R14
+        self.output.write("@SP\nAM=M-1\nD=M\n@ARG\nA=M\nM=D\n")  # Set return value to caller's stack
+        self.output.write("@ARG\nD=M+1\n@SP\nM=D\n")  # Reset SP of the caller
+        self.output.write("@R13\nAM=M-1\nD=M\n@THAT\nM=D\n")  # Restore THAT
+        self.output.write("@R13\nAM=M-1\nD=M\n@THIS\nM=D\n")  # Restore THIS
+        self.output.write("@R13\nAM=M-1\nD=M\n@ARG\nM=D\n")  # Restore ARG
+        self.output.write("@R13\nAM=M-1\nD=M\n@LCL\nM=D\n")  # Restore LCL
+        self.output.write("@R14\nA=M\n0;JMP\n")  # Jump to return address
         pass
