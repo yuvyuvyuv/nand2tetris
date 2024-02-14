@@ -66,8 +66,9 @@ if "__main__" == __name__:
         sys.exit("Invalid usage, please use: VMtranslator <input path>")
     argument_path = os.path.abspath(sys.argv[1])
     if os.path.isdir(argument_path):
+        print(os.listdir(argument_path))
         files_to_translate = [
-            os.path.join(argument_path, filename)
+            os.path.join(argument_path, str(filename))
             for filename in os.listdir(argument_path)]
         output_path = os.path.join(argument_path, os.path.basename(
             argument_path))

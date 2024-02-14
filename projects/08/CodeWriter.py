@@ -21,6 +21,9 @@ class CodeWriter:
         # Note that you can write to output_stream like so:
         # output_stream.write("Hello world! \n")
         self.output = output_stream
+        # TODO
+        # pop and push instruction bits
+        # bootstrap
         self.symbols = {
             "add": "M=D+M",
             "sub": "M=M-D",
@@ -42,6 +45,9 @@ class CodeWriter:
         }
         self.label_counter = 0
         self.set_file_name(output_stream.name)
+        # bootstrap
+        self.output.write("@256\nD=A\n@SP\nM=D\n")
+        self.write_call("Sys.init", 0)
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -209,12 +215,8 @@ class CodeWriter:
                 output.append("@" + self.file_name + "." + str(index))
                 # Put D value into static address.
                 output.append("M=D")
-
-
         for line in output:
             self.output.write(f"{line}\n")
-
-        
     
     def write_label(self, label: str) -> None:
         """Writes assembly code that affects the label command. 
@@ -302,11 +304,14 @@ class CodeWriter:
         # LCL = SP              // repositions LCL
         # goto function_name    // transfers control to the callee
         # (return_address)      // injects the return address label into the code
+
+        push = "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"
+
         self.output.write(f"@{self.file_name}.{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
-        self.output.write("@LCL\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
-        self.output.write("@ARG\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
-        self.output.write("@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
-        self.output.write("@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write("@LCL"+push)
+        self.output.write("@ARG"+push)
+        self.output.write("@THIS"+push)
+        self.output.write("@THAT"+push)
         self.output.write(f"@{int(n_args)+5}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n")
         self.output.write("@SP\nD=M\n@LCL\nM=D\n")
         self.output.write(f"@{function_name}\n0;JMP\n")
