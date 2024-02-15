@@ -45,9 +45,15 @@ class CodeWriter:
         }
         self.label_counter = 0
         self.set_file_name(output_stream.name)
-        # bootstrap
-        # self.output.write("@256\nD=A\n@SP\nM=D\n")
-        # self.write_call("Sys.init", 0)
+
+    def write_bootstrap(self) -> None:
+        """Writes assembly code that effects the VM initialization, also called
+        bootstrap code. This code must be placed at the beginning of the output
+        file. It is used to initialize the SP and call the Sys.init function.
+        """
+        self.output.write("@256\nD=A\n@SP\nM=D\n")
+        self.write_call("Sys.init", 0)
+        pass
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -239,6 +245,7 @@ class CodeWriter:
         Args:
             label (str): the label to go to.
         """
+        label = self.file_name+'.'+label
         self.output.write(f"@{label}\n0;JMP\n")
 
         pass
@@ -249,6 +256,7 @@ class CodeWriter:
         Args:
             label (str): the label to go to.
         """
+        label = self.file_name+'.'+label
         self.output.write(f"@SP\nAM=M-1\nD=M\n@{label}\nD;JNE\n")
         pass
     
@@ -270,7 +278,7 @@ class CodeWriter:
         # (function_name)       // injects a function entry label into the code
         # repeat n_vars times:  // n_vars = number of local variables
         #   push constant 0     // initializes the local variables to 0
-        function_name = self.file_name+'.'+function_name
+        #function_name = self.file_name+'.'+function_name
         self.output.write(f"({function_name})\n")
         for i in range(int(n_vars)):
             self.output.write("@0\nD=A\n@SP\nAM=M+1\nA=A-1\nM=D\n")
@@ -307,7 +315,8 @@ class CodeWriter:
 
         push = "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"
 
-        self.output.write(f"@{self.file_name}.{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        #self.output.write(f"@{self.file_name}.{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write(f"@{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
         self.output.write("@LCL"+push)
         self.output.write("@ARG"+push)
         self.output.write("@THIS"+push)
@@ -315,7 +324,8 @@ class CodeWriter:
         self.output.write(f"@{int(n_args)+5}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n")
         self.output.write("@SP\nD=M\n@LCL\nM=D\n")
         self.output.write(f"@{function_name}\n0;JMP\n")
-        self.output.write(f"({self.file_name}.{function_name}$ret.{self.label_counter})\n")
+        #self.output.write(f"({self.file_name}.{function_name}$ret.{self.label_counter})\n")
+        self.output.write(f"({function_name}$ret.{self.label_counter})\n")
         self.label_counter += 1
 
         pass

@@ -28,6 +28,9 @@ def translate_file(
     parser = Parser(input_file)
     code_writer = CodeWriter(output_file)
     code_writer.set_file_name(input_file.name)
+    if bootstrap:
+        code_writer.write_bootstrap()
+
     while parser.has_more_commands():
         parser.advance()
         # Write the current command as a comment to the output file for debugging purposes.
@@ -54,7 +57,7 @@ def translate_file(
         elif command_type == "C_CALL":
             code_writer.write_call(parser.arg1(), parser.arg2())
     # Close the output file before exiting.
-    code_writer.output.close()
+    #code_writer.output.close()
     pass
 
 
@@ -77,7 +80,13 @@ if "__main__" == __name__:
         files_to_translate = [argument_path]
         output_path, extension = os.path.splitext(argument_path)
     output_path += ".asm"
-    bootstrap = True
+
+    bootstrap = False
+
+    for input_path in files_to_translate:
+            filename, extension = os.path.splitext(input_path)
+            if filename[-3:] .lower() == "sys" and extension.lower() == ".vm":
+                bootstrap = True
     with open(output_path, 'w') as output_file:
         for input_path in files_to_translate:
             filename, extension = os.path.splitext(input_path)
