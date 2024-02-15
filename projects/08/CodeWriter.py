@@ -45,6 +45,7 @@ class CodeWriter:
         }
         self.label_counter = 0
         self.set_file_name(output_stream.name)
+        self.curr_func = ''
 
     def write_bootstrap(self) -> None:
         """Writes assembly code that effects the VM initialization, also called
@@ -74,7 +75,7 @@ class CodeWriter:
         # the function "translate_file" in Main.py using python's os library,
         # For example, using code similar to:
         # input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
-        self.file_name = filename[filename.rindex("\\") + 1:filename.rindex('.')]
+        self.file_name = filename
 
     def write_arithmetic(self, command: str) -> None:
         """Writes assembly code that is the translation of the given 
@@ -235,7 +236,7 @@ class CodeWriter:
         Args:
             label (str): the label to write.
         """
-        label = self.file_name+'.'+label
+        label = self.file_name+'.'+self.curr_func+"$"+label
         self.output.write(f"({label})\n")
         pass
     
@@ -245,7 +246,7 @@ class CodeWriter:
         Args:
             label (str): the label to go to.
         """
-        label = self.file_name+'.'+label
+        label = self.file_name+'.'+self.curr_func+"$"+label
         self.output.write(f"@{label}\n0;JMP\n")
 
         pass
@@ -256,7 +257,7 @@ class CodeWriter:
         Args:
             label (str): the label to go to.
         """
-        label = self.file_name+'.'+label
+        label = self.file_name+'.'+self.curr_func+"$"+label
         self.output.write(f"@SP\nAM=M-1\nD=M\n@{label}\nD;JNE\n")
         pass
     
@@ -279,6 +280,7 @@ class CodeWriter:
         # repeat n_vars times:  // n_vars = number of local variables
         #   push constant 0     // initializes the local variables to 0
         #function_name = self.file_name+'.'+function_name
+        self.curr_func = function_name
         self.output.write(f"({function_name})\n")
         for i in range(int(n_vars)):
             self.output.write("@0\nD=A\n@SP\nAM=M+1\nA=A-1\nM=D\n")
@@ -315,8 +317,8 @@ class CodeWriter:
 
         push = "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n"
 
-        #self.output.write(f"@{self.file_name}.{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
-        self.output.write(f"@{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        self.output.write(f"@{self.file_name}.{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
+        #self.output.write(f"@{function_name}$ret.{self.label_counter}\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n")
         self.output.write("@LCL"+push)
         self.output.write("@ARG"+push)
         self.output.write("@THIS"+push)
@@ -324,8 +326,8 @@ class CodeWriter:
         self.output.write(f"@{int(n_args)+5}\nD=A\n@SP\nD=M-D\n@ARG\nM=D\n")
         self.output.write("@SP\nD=M\n@LCL\nM=D\n")
         self.output.write(f"@{function_name}\n0;JMP\n")
-        #self.output.write(f"({self.file_name}.{function_name}$ret.{self.label_counter})\n")
-        self.output.write(f"({function_name}$ret.{self.label_counter})\n")
+        self.output.write(f"({self.file_name}.{function_name}$ret.{self.label_counter})\n")
+        #self.output.write(f"({function_name}$ret.{self.label_counter})\n")
         self.label_counter += 1
 
         pass

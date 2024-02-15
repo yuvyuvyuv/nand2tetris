@@ -27,7 +27,12 @@ def translate_file(
      # It might be good to start with something like:
     parser = Parser(input_file)
     code_writer = CodeWriter(output_file)
-    code_writer.set_file_name(input_file.name)
+    filename = input_file.name
+    if os.name == 'posix':
+        file_name = filename[filename.rindex("/") + 1:filename.rindex('.')]
+    else:
+        file_name = filename[filename.rindex("\\") + 1:filename.rindex('.')]
+    code_writer.set_file_name(file_name)
     if bootstrap:
         code_writer.write_bootstrap()
 
@@ -81,12 +86,7 @@ if "__main__" == __name__:
         output_path, extension = os.path.splitext(argument_path)
     output_path += ".asm"
 
-    bootstrap = False
-
-    for input_path in files_to_translate:
-            filename, extension = os.path.splitext(input_path)
-            if filename[-3:] .lower() == "sys" and extension.lower() == ".vm":
-                bootstrap = True
+    bootstrap = True
     with open(output_path, 'w') as output_file:
         for input_path in files_to_translate:
             filename, extension = os.path.splitext(input_path)
