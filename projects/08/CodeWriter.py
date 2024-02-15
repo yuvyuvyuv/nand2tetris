@@ -86,13 +86,19 @@ class CodeWriter:
         Args:
             command (str): an arithmetic command.
         """
+        End_of_stack = "@SP\nA=M-1\n"
+        Pop_stack_D = "@SP\nAM=M-1\nD=M\n"
         output = []
         if command in ["add", "sub", "and", "or"]:
             # Pop Stack into D.
+            self.output.write(Pop_stack_D)
+            """
             output.append("@SP")
             output.append("AM=M-1")
             output.append("D=M")
+            """
             # Access to Stack[-1]
+            self.output.write(End_of_stack)
             output.append("@SP")
             output.append("A=M-1")
             # Use the Arithmetic Operator
@@ -103,10 +109,11 @@ class CodeWriter:
             output.append("@SP")
             output.append("A=M-1")
             output.append(self.symbols[command])
-        elif command in ["eq", "gt", "lt"]:
+        elif command in ["eq"]:#,"gt", "lt"]:
             jump_label = "CompLabel" + str(self.label_counter)
             self.label_counter += 1
             # Pop Stack into D.
+            #output.append("\\\\command: " + command)
             output.append("@SP")
             output.append("AM=M-1")
             output.append("D=M")
@@ -127,6 +134,69 @@ class CodeWriter:
             output.append("M=0")
             # Jump label for the True state.
             output.append("(" + jump_label + ")")
+        elif command in ["gt", "lt"]:
+            #output.append("\\\\command: " + command)
+
+            diff = 0 if command == "gt" else -1
+            not_diff = -1 if command == "gt" else 0
+            output.append(f"""@SP
+M=M+1
+@SP
+M=M-1
+A=M
+D=M
+@MainYpos{self.label_counter}
+D;JGT
+@MainYneg{self.label_counter}
+0;JMP
+(MainYpos{self.label_counter})
+@SP
+M=M-1
+A=M
+D=M
+@MainXYpos{self.label_counter}
+D;JGE
+@MainYgtX{self.label_counter}
+0;JMP
+(MainYneg{self.label_counter})
+@SP
+M=M-1
+A=M
+D=M
+@MainYltX{self.label_counter}
+D;JGT
+@MainXYpos{self.label_counter}
+0;JMP
+(MainXYpos{self.label_counter})
+@SP
+A=M+1
+D=M-D
+@MainYgtX{self.label_counter}
+D;JGT
+@MainYeqX{self.label_counter}
+D;JEQ
+@MainYltX{self.label_counter}
+0;JMP
+(MainYltX{self.label_counter})
+D={not_diff}
+@Mainend{self.label_counter}
+0;JMP
+(MainYgtX{self.label_counter})
+D={diff}
+@Mainend{self.label_counter}
+0;JMP
+(MainYeqX{self.label_counter})
+D=0
+@Mainend{self.label_counter}
+0;JMP
+(Mainend{self.label_counter})
+@SP
+A=M
+M=D
+@SP
+M=M+1""")
+            pass
+            
         for line in output:
             self.output.write(f"{line}\n")
 
