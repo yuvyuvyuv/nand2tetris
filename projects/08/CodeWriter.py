@@ -46,8 +46,8 @@ class CodeWriter:
         self.label_counter = 0
         self.set_file_name(output_stream.name)
         # bootstrap
-        self.output.write("@256\nD=A\n@SP\nM=D\n")
-        self.write_call("Sys.init", 0)
+        # self.output.write("@256\nD=A\n@SP\nM=D\n")
+        # self.write_call("Sys.init", 0)
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
