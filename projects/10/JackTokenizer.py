@@ -100,7 +100,34 @@ class JackTokenizer:
         """
         # Your code goes here!
         # A good place to start is to read all the lines of the input:
-        # input_lines = input_stream.read().splitlines()
+        input_lines = input_stream.read().splitlines()
+
+        multi_comment_flag = False
+        first_parse = []
+        for line in input_lines:
+            # Handle comments
+            if line.startswith("/*"):
+                multi_comment_flag = True
+            if multi_comment_flag:
+                continue
+            if line.endswith("*/"):
+                multi_comment_flag = False
+            line = line[:line.find("//")]
+
+
+            # Find string const
+            while(line.find("\"") != -1):
+                # Find 
+                loc1 = line.find("\"")
+                loc2 = line.find("\"",loc1+1)
+                first_parse.extend(line[:loc1].split())
+                first_parse.append(line[loc1:loc2+1])
+                line = line[loc2+1:]
+            first_parse.extend(line.split())
+
+        pass
+    def tokenize_line(line):
+
         pass
 
     def has_more_tokens(self) -> bool:
