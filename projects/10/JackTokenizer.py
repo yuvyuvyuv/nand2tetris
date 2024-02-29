@@ -106,26 +106,48 @@ class JackTokenizer:
         first_parse = []
         for line in input_lines:
             # Handle comments
+            # line = line[:line.find("//")] not gud
             if line.startswith("/*"):
                 multi_comment_flag = True
             if multi_comment_flag:
                 continue
             if line.endswith("*/"):
                 multi_comment_flag = False
-            line = line[:line.find("//")]
-
+            
+            
 
             # Find string const
             while(line.find("\"") != -1):
-                # Find 
                 loc1 = line.find("\"")
                 loc2 = line.find("\"",loc1+1)
                 first_parse.extend(line[:loc1].split())
                 first_parse.append(line[loc1:loc2+1])
                 line = line[loc2+1:]
             first_parse.extend(line.split())
+        
+        keyword_token = ['class','constructor','function','method'
+                         ,'field','static','var','int','char'
+                         ,'boolean','void','true','false','null'
+                         ,'this','let','do','if','else','while','return']
+        symbol_token = ['{','}' , '(' , ')' , '[' , ']' , '.' 
+                         , ',' , ';' , '+' ,'-' , '*' , '/' , '&'
+                         , '|' , '<' , '>' , '=' , '~' , '^' , '#']
+        symbol_token_string = "{}()[].,;+-*/&|<>=~^#"
+        # integerConstant_token  A decimal number in the range 0-32767.
+        # StringConstant: '"' A sequence of Unicode characters not including double quote or newline '"'
+        # identifier: A sequence of letters, digits, and underscore ('_') not 
+        #          starting with a digit. You can assume keywords cannot be
+        #          identifiers, so 'self' cannot be an identifier, etc'.
 
+        parsed = []
+        for part in first_parse:
+            #check if symbol
+            if any([True for c in symbol_token_string if c in part]):
+                parsed.append(())
         pass
+
+
+
     def tokenize_line(line):
 
         pass
