@@ -100,31 +100,76 @@ class JackTokenizer:
         """
         # Your code goes here!
         # A good place to start is to read all the lines of the input:
+        self.tokens = []
+
         input_lines = input_stream.read().splitlines()
-
-        multi_comment_flag = False
-        first_parse = []
+        comment_flag = False
+        string_const_flag = False
         for line in input_lines:
-            # Handle comments
-            # line = line[:line.find("//")] not gud
-            if line.startswith("/*"):
-                multi_comment_flag = True
-            if multi_comment_flag:
-                continue
-            if line.endswith("*/"):
-                multi_comment_flag = False
-            
-            
+            buffer = ""
+            for i in range(len(line)):
+                c = line[i]
 
-            # Find string const
-            while(line.find("\"") != -1):
-                loc1 = line.find("\"")
-                loc2 = line.find("\"",loc1+1)
-                first_parse.extend(line[:loc1].split())
-                first_parse.append(line[loc1:loc2+1])
-                line = line[loc2+1:]
-            first_parse.extend(line.split())
-        
+                # alot of edge cases
+
+                # find end of string const
+                if string_const_flag:
+                    # if end of string const, append string buffer and clean
+                    if c == "\"":
+                        string_const_flag = False
+                        self.tokens.append((buffer,"STRING_CONST"))
+                        buffer = ""
+                        continue
+                    # add to string buffer
+                    buffer += c
+                    continue
+                # start of string
+                if c == "\"":
+                    string_const_flag = True
+                    continue
+
+                # find end of mult line comment
+                if comment_flag:
+                    if c == "*":
+                        if i < len(line)-2:
+                            next = line[i+1] 
+                            if next == "/":
+                                comment_flag = False
+                                continue
+                    continue
+
+                # find start of comment 
+                if c == "/":
+                    if i < len(line)-2:
+                        next = line[i+1] 
+                        # check if multi line
+                        if next == "*":
+                            comment_flag = True
+                            continue
+                        # check if oneliner
+                        elif next == "/":
+                            break
+                
+                # nomore edge cases
+
+                # check if symbol token
+                if c in symbol_token:
+                    self.tokens.append((c,"SYMBOL"))
+
+                # if whitespace end of buffer and check cases
+                if c.isspace():
+                    if buffer == "":
+                        continue
+                    if buffer in keyword_token:
+                        self.tokens.append((buffer,"KEYWORD"))
+                    elif self.str_is_int(buffer):
+                        self.tokens.append((buffer,"INT_CONST"))
+                    else:
+                        self.tokens.append((buffer,"IDENTIFIER"))
+                    continue
+
+                buffer += c
+                
         keyword_token = ['class','constructor','function','method'
                          ,'field','static','var','int','char'
                          ,'boolean','void','true','false','null'
@@ -132,26 +177,22 @@ class JackTokenizer:
         symbol_token = ['{','}' , '(' , ')' , '[' , ']' , '.' 
                          , ',' , ';' , '+' ,'-' , '*' , '/' , '&'
                          , '|' , '<' , '>' , '=' , '~' , '^' , '#']
-        symbol_token_string = "{}()[].,;+-*/&|<>=~^#"
+
         # integerConstant_token  A decimal number in the range 0-32767.
         # StringConstant: '"' A sequence of Unicode characters not including double quote or newline '"'
         # identifier: A sequence of letters, digits, and underscore ('_') not 
         #          starting with a digit. You can assume keywords cannot be
         #          identifiers, so 'self' cannot be an identifier, etc'.
 
-        parsed = []
-        for part in first_parse:
-            #check if symbol
-            if any([True for c in symbol_token_string if c in part]):
-                parsed.append(())
-        pass
+       
 
-
-
-    def tokenize_line(line):
-
-        pass
-
+    def str_is_int(self, s: str) -> bool:
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
+    
     def has_more_tokens(self) -> bool:
         """Do we have more tokens in the input?
 
@@ -159,6 +200,7 @@ class JackTokenizer:
             bool: True if there are more tokens, False otherwise.
         """
         # Your code goes here!
+        
         pass
 
     def advance(self) -> None:
@@ -168,7 +210,7 @@ class JackTokenizer:
         """
         # Your code goes here!
         pass
-
+        
     def token_type(self) -> str:
         """
         Returns:
@@ -188,6 +230,7 @@ class JackTokenizer:
             "IF", "ELSE", "WHILE", "RETURN", "TRUE", "FALSE", "NULL", "THIS"
         """
         # Your code goes here!
+
         pass
 
     def symbol(self) -> str:
@@ -216,6 +259,7 @@ class JackTokenizer:
         pass
 
     def int_val(self) -> int:
+        
         """
         Returns:
             str: the integer value of the current token.
@@ -223,6 +267,7 @@ class JackTokenizer:
             Recall that integerConstant was defined in the grammar like so:
             integerConstant: A decimal number in the range 0-32767.
         """
+        return int(self.current_token)
         # Your code goes here!
         pass
 
