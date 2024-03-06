@@ -43,7 +43,7 @@ class CompilationEngine:
         elif val == "&":
             val = "&amp;"
         elif val == "\"":
-            val = "&quot;"
+            val = "&quot;" #special XML characters
         self.output_stream.write(f"{val} ")
         self.output_stream.write(f"</{self.tokenizer.token_type()}>\n")
     
