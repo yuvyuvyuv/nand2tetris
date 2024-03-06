@@ -33,9 +33,18 @@ class CompilationEngine:
         pass
 
     def terminal_write(self) -> None:
+        val = self.tokenizer.curr_tok[0]
         t = "  " * self.tab_conut
         self.output_stream.write(t+f"<{self.tokenizer.token_type()}> ")
-        self.output_stream.write(f"{self.tokenizer.curr_tok[0]} ")
+        if val == "<":
+            val = "&lt;"
+        elif val == ">":
+            val = "&gt;"
+        elif val == "&":
+            val = "&amp;"
+        elif val == "\"":
+            val = "&quot;"
+        self.output_stream.write(f"{val} ")
         self.output_stream.write(f"</{self.tokenizer.token_type()}>\n")
     
     def write_start(self, input) -> None:
@@ -68,7 +77,7 @@ class CompilationEngine:
             self.compile_subroutine()  # Compile the subroutines
         
         self.advance_and_write()  # Consume the "}" keyword
-
+        
         self.write_end("class")
         
     def compile_class_var_dec(self) -> None:
