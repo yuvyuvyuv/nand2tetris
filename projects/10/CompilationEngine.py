@@ -23,7 +23,7 @@ class CompilationEngine:
         :param input_stream: The input stream.
         :param output_stream: The output stream.
         """
-        self.tokenizer = JackTokenizer(input_stream)
+        self.tokenizer = input_stream
         self.output_stream = output_stream
         # Your code goes here!
         # Note that you can write to output_stream like so:
@@ -33,20 +33,20 @@ class CompilationEngine:
         pass
 
     def terminal_write(self) -> None:
-        t = "\t" * self.tab_conut
-        self.output_stream.write(t+f"<{self.tokenizer.token_type()}>")
-        self.output_stream.write(t+f"{self.tokenizer.identifier()}")
-        self.output_stream.write(t+f"</{self.tokenizer.token_type()}>")
+        t = "  " * self.tab_conut
+        self.output_stream.write(t+f"<{self.tokenizer.token_type()}> ")
+        self.output_stream.write(f"{self.tokenizer.curr_tok[0]} ")
+        self.output_stream.write(f"</{self.tokenizer.token_type()}>\n")
     
     def write_start(self, input) -> None:
-        t = "\t" * self.tab_conut
-        self.output_stream.write(t+f"<{input}>")
+        t = "  " * self.tab_conut
+        self.output_stream.write(t+f"<{input}>\n")
         self.tab_conut +=1
        
     def write_end(self, input) -> None:
-        t = "\t" * self.tab_conut
-        self.output_stream.write(t+f"</{input}>")
         self.tab_conut -=1
+        t = "  " * self.tab_conut
+        self.output_stream.write(t+f"</{input}>\n")
         
     def advance_and_write(self) -> None:
         self.tokenizer.advance()
@@ -55,16 +55,16 @@ class CompilationEngine:
     def compile_class(self) -> None:
         """Compiles a complete class."""
         self.write_start("class")
-        self.advance_and_write()  # Consume the "class" keyword
+        self.terminal_write()  # Consume the "class" keyword
         
         self.advance_and_write()  # Consume the className
         
         self.advance_and_write()  # Consume the "{" keyword
         
-        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token()[0] in ["static", "field"]:
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() in ["static", "field"]:
             self.compile_class_var_dec()  # Compile the class variable declarations
         
-        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token()[0] in ["constructor", "function", "method"]:
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() in ["constructor", "function", "method"]:
             self.compile_subroutine()  # Compile the subroutines
         
         self.advance_and_write()  # Consume the "}" keyword
@@ -80,9 +80,8 @@ class CompilationEngine:
         self.advance_and_write()  #  variable type
 
         self.advance_and_write()  #  variable name
-        self.terminal_write()
 
-        while self.tokenizer.peek_token()[0] == ",":
+        while self.tokenizer.peek_val() == ",":
             self.advance_and_write()  #  comma ","
             self.advance_and_write()  #  variable name
             
@@ -96,7 +95,7 @@ class CompilationEngine:
         You can assume that classes with constructors have at least one field,
         you will understand why this is necessary in project 11.
         """
-
+        self.write_start("subroutineDec")
         self.advance_and_write()  #  the subroutine type (method, function, or constructor)
         self.advance_and_write()  # Consume the return type
         self.advance_and_write()  # Consume the subroutine name
@@ -108,11 +107,12 @@ class CompilationEngine:
         self.write_start("subroutineBody")
 
         self.advance_and_write()  # Consume the opening curly brace "{"
-        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token()[0] == "var":
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() == "var":
             self.compile_var_dec()  # Compile the variable declarations
         self.compile_statements()  # Compile the statements
         self.advance_and_write()  # Consume the closing curly brace "}"
         self.write_end("subroutineBody")
+        self.write_end("subroutineDec")
 
     def compile_parameter_list(self) -> None:
         """Compiles a (possibly empty) parameter list, not including the 
@@ -120,11 +120,10 @@ class CompilationEngine:
         """
         # Your code goes here
         self.write_start("parameterList")
-        
-        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token() != ")":
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() != ")":
             self.advance_and_write()  # Consume the parameter type
             self.advance_and_write()  # Consume the parameter name
-            if self.tokenizer.peek_token() == ",":
+            if self.tokenizer.peek_val() == ",":
                 self.advance_and_write()  # Consume the comma ","
 
         self.write_end("parameterList")
@@ -140,9 +139,8 @@ class CompilationEngine:
         self.advance_and_write()  #  variable type
 
         self.advance_and_write()  #  variable name
-        self.terminal_write()
 
-        while self.tokenizer.peek_token()[0] == ",":
+        while self.tokenizer.peek_val() == ",":
             self.advance_and_write()  #  comma ","
             self.advance_and_write()  #  variable name
             
@@ -157,9 +155,8 @@ class CompilationEngine:
         "{}".
         """
         self.write_start("statements")
-        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token()[0] != "}":
-            self.advance_and_write()
-            token_type = self.tokenizer.peek_token()[0]
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() != "}":
+            token_type = self.tokenizer.peek_val()
             if token_type == "let":
                 self.compile_let()
             elif token_type == "if":
@@ -179,7 +176,18 @@ class CompilationEngine:
         # Your code goes here!
         self.write_start("doStatement")
         self.advance_and_write()  # Consume the "do" keyword
-        self.compile_subroutine()  # Compile the subroutine call
+        self.advance_and_write() # name
+        # Compile the subroutine call
+        if self.tokenizer.peek_val() == "(":
+            self.advance_and_write()
+            self.compile_expression_list()
+            self.advance_and_write()
+        elif self.tokenizer.peek_val() == ".":
+            self.advance_and_write()                    
+            self.advance_and_write()
+            self.advance_and_write()
+            self.compile_expression_list()
+            self.advance_and_write()
         self.advance_and_write()  # Consume the ";" symbol
         self.write_end("doStatement")
 
@@ -189,7 +197,7 @@ class CompilationEngine:
         self.advance_and_write()  # Consume the "let" keyword
         self.advance_and_write()  # Consume the variable name
 
-        if self.tokenizer.peek_token()[0] == "[":
+        if self.tokenizer.peek_val() == "[":
             self.advance_and_write()  # Consume the opening square bracket "["
             self.compile_expression()  # Compile the expression inside the square brackets
             self.advance_and_write()  # Consume the closing square bracket "]"
@@ -218,7 +226,7 @@ class CompilationEngine:
         self.write_start("returnStatement")
         self.advance_and_write()  # Consume the "return" keyword
 
-        if self.tokenizer.peek_token()[0] != ";":
+        if self.tokenizer.peek_val() != ";":
             self.compile_expression()  # Compile the expression to be returned
 
         self.advance_and_write()  # Consume the semicolon ";"
@@ -236,7 +244,7 @@ class CompilationEngine:
         self.compile_statements()  # Compile the statements inside the if block
         self.advance_and_write()  # Consume the closing curly brace "}"
 
-        if self.tokenizer.peek_token()[0] == "else":
+        if self.tokenizer.peek_val() == "else":
             self.advance_and_write()  # Consume the "else" keyword
             self.advance_and_write()  # Consume the opening curly brace "{"
             self.compile_statements()  # Compile the statements inside the else block
@@ -247,8 +255,8 @@ class CompilationEngine:
         """Compiles an expression."""
         self.write_start("expression")
         self.compile_term()  # Compile the first term of the expression
-
-        while self.tokenizer.peek_token() in ["+", "-", "*", "/", "&", "|", "<", ">", "="]:
+        
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() in ["+", "-", "*", "/", "&", "|", "<", ">", "="]:
             self.advance_and_write()  # Consume the operator
             self.compile_term()  # Compile the next term of the expression
         self.write_end("expression")
@@ -266,53 +274,47 @@ class CompilationEngine:
         """
         # Your code goes here!
         self.write_start("term")
-        token_type = self.tokenizer.peek_token()[1]
-
-        if token_type == "integerConstant":
-            self.advance_and_write()
-        elif token_type == "stringConstant":
-            self.advance_and_write()
-        elif token_type == "keyword":
-            self.advance_and_write()
-        elif token_type == "identifier":
-            self.advance_and_write()
-            if self.tokenizer.peek_token()[0] == "[":
+        token_type = self.tokenizer.peek_token()
+        if token_type != None:
+            token_type = token_type[1]
+            if token_type == "integerConstant":
                 self.advance_and_write()
-                self.compile_expression()
+            elif token_type == "stringConstant":
                 self.advance_and_write()
-            elif self.tokenizer.peek_token()[0] == "(":
+            elif token_type == "keyword":
                 self.advance_and_write()
-                self.compile_expression_list()
+            elif token_type == "identifier":
                 self.advance_and_write()
-            elif self.tokenizer.peek_token()[0] == ".":
-                self.advance_and_write()
-                self.advance_and_write()
-                self.compile_expression_list()
-                self.advance_and_write()
-                
-        elif token_type == "symbol":
-            if self.tokenizer.peek_token()[0] == "(":
-                self.advance_and_write()
-                self.compile_expression()
-                self.advance_and_write()
-            else:
-                self.advance_and_write()
-                self.compile_term()
-
-
-
-
-
+                if self.tokenizer.peek_val() == "[":
+                    self.advance_and_write()
+                    self.compile_expression()
+                    self.advance_and_write()
+                elif self.tokenizer.peek_val() == "(":
+                    self.advance_and_write()
+                    self.compile_expression_list()
+                    self.advance_and_write()
+                elif self.tokenizer.peek_val() == ".":
+                    self.advance_and_write()                    
+                    self.advance_and_write()
+                    self.advance_and_write()
+                    self.compile_expression_list()
+                    self.advance_and_write()
+                    
+            elif token_type == "symbol":
+                if self.tokenizer.peek_val() == "(":
+                    self.advance_and_write()
+                    self.compile_expression()
+                    self.advance_and_write()
+                else:
+                    self.advance_and_write()
+                    self.compile_term()
         self.write_end("term")
-
-        
-        pass
 
     def compile_expression_list(self) -> None:
         """Compiles a (possibly empty) comma-separated list of expressions."""
         self.write_start("expressionList")
-        while self.tokenizer.peek_token()[0] != ")":
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() != ")":
             self.compile_expression()
-            if self.tokenizer.peek_token() == ",":
+            if self.tokenizer.has_more_tokens() and self.tokenizer.peek_val() == ",":
                 self.advance_and_write()    
         self.write_end("expressionList")

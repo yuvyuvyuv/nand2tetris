@@ -101,8 +101,8 @@ class JackTokenizer:
 
         input_lines = input_stream.read().splitlines()
         self.tokens = self.tokenize(input_lines)
-        self.curr_tok = None
         self.curr_index = 0
+        self.curr_tok = self.tokens[self.curr_index]
         self.len = len(self.tokens)
 
        
@@ -126,7 +126,7 @@ class JackTokenizer:
         string_const_flag = False
         for line in input_lines:
             buffer = ""
-            curr_mode = ""
+            int_mode = False
             skip = 0
             for i in range(len(line)):
                 c = line[i]
@@ -141,7 +141,7 @@ class JackTokenizer:
                     # if end of string const, append string buffer and clean
                     if c == "\"":
                         string_const_flag = False
-                        tokens.append((buffer,"STRING_CONST"))
+                        tokens.append((buffer,"stringConstant"))
                         buffer = ""
                         continue
                     # add to string buffer
@@ -182,7 +182,7 @@ class JackTokenizer:
 
                 if int_mode:
                     if not self.str_is_int(c):
-                        tokens.append((buffer,"INT_CONST"))
+                        tokens.append((buffer,"integerConstant"))
                         buffer = ""
                         int_mode = False
 
@@ -191,13 +191,13 @@ class JackTokenizer:
                 if c in symbol_token:
                     if buffer != "":
                         if buffer in keyword_token:
-                            tokens.append((buffer,"KEYWORD"))
+                            tokens.append((buffer,"keyword"))
                         elif self.str_is_int(buffer):
-                            tokens.append((buffer,"INT_CONST"))
+                            tokens.append((buffer,"integerConstant"))
                         else:
-                            tokens.append((buffer,"IDENTIFIER"))
+                            tokens.append((buffer,"identifier"))
                         buffer = ""
-                    tokens.append((c,"SYMBOL"))
+                    tokens.append((c,"symbol"))
                     
                     continue
                 
@@ -206,11 +206,11 @@ class JackTokenizer:
                     if buffer == "":
                         continue
                     if buffer in keyword_token:
-                        tokens.append((buffer,"KEYWORD"))
+                        tokens.append((buffer,"keyword"))
                     elif self.str_is_int(buffer):
-                        tokens.append((buffer,"INT_CONST"))
+                        tokens.append((buffer,"integerConstant"))
                     else:
-                        tokens.append((buffer,"IDENTIFIER"))
+                        tokens.append((buffer,"identifier"))
                     buffer = ""
                     continue
                 
@@ -239,7 +239,7 @@ class JackTokenizer:
             bool: True if there are more tokens, False otherwise.
         """
         # Your code goes here!
-        return self.curr_index < self.len
+        return self.curr_index + 1 < self.len
         pass
 
     def advance(self) -> None:
@@ -258,7 +258,7 @@ class JackTokenizer:
         """
         Returns:
             str: the type of the current token, can be
-            "KEYWORD", "SYMBOL", "IDENTIFIER", "INT_CONST", "STRING_CONST"
+            "keyword", "symbol", "identifier", "integerConstant", "stringConstant"
         """
         # Your code goes here!
         return self.curr_tok[1]
@@ -268,13 +268,13 @@ class JackTokenizer:
         """
         Returns:
             str: the keyword which is the current token.
-            Should be called only when token_type() is "KEYWORD".
+            Should be called only when token_type() is "keyword".
             Can return "CLASS", "METHOD", "FUNCTION", "CONSTRUCTOR", "INT", 
             "BOOLEAN", "CHAR", "VOID", "VAR", "STATIC", "FIELD", "LET", "DO", 
             "IF", "ELSE", "WHILE", "RETURN", "TRUE", "FALSE", "NULL", "THIS"
         """
         # Your code goes here!
-        if self.token_type() == "KEYWORD":
+        if self.token_type() == "keyword":
             return self.curr_tok[0]
 
         pass
@@ -283,13 +283,13 @@ class JackTokenizer:
         """
         Returns:
             str: the character which is the current token.
-            Should be called only when token_type() is "SYMBOL".
+            Should be called only when token_type() is "symbol".
             Recall that symbol was defined in the grammar like so:
             symbol: '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ';' | '+' | 
               '-' | '*' | '/' | '&' | '|' | '<' | '>' | '=' | '~' | '^' | '#'
         """
         # Your code goes here!
-        if self.token_type() == "SYMBOL":
+        if self.token_type() == "symbol":
             return self.curr_tok[0]
 
         pass
@@ -298,14 +298,14 @@ class JackTokenizer:
         """
         Returns:
             str: the identifier which is the current token.
-            Should be called only when token_type() is "IDENTIFIER".
+            Should be called only when token_type() is "identifier".
             Recall that identifiers were defined in the grammar like so:
             identifier: A sequence of letters, digits, and underscore ('_') not 
                   starting with a digit. You can assume keywords cannot be
                   identifiers, so 'self' cannot be an identifier, etc'.
         """
         # Your code goes here!        
-        if self.token_type() == "IDENTIFIER":
+        if self.token_type() == "identifier":
             return self.curr_tok[0]
 
         pass
@@ -315,12 +315,12 @@ class JackTokenizer:
         """
         Returns:
             str: the integer value of the current token.
-            Should be called only when token_type() is "INT_CONST".
+            Should be called only when token_type() is "integerConstant".
             Recall that integerConstant was defined in the grammar like so:
             integerConstant: A decimal number in the range 0-32767.
         """
         # Your code goes here!
-        if self.token_type() == "INT_CONST":
+        if self.token_type() == "integerConstant":
             return int(self.curr_tok[0])
         pass
 
@@ -328,18 +328,28 @@ class JackTokenizer:
         """
         Returns:
             str: the string value of the current token, without the double 
-            quotes. Should be called only when token_type() is "STRING_CONST".
+            quotes. Should be called only when token_type() is "stringConstant".
             Recall that StringConstant was defined in the grammar like so:
             StringConstant: '"' A sequence of Unicode characters not including 
                       double quote or newline '"'
         """
         # Your code goes here!
-        if self.token_type() == "STRING_CONST":
+        if self.token_type() == "stringConstant":
             return int(self.curr_tok[0])
 
         pass
     def peek_token(self) -> str:
         """Returns the next token without consuming it."""
         if not self.has_more_tokens():
-            return None
+            return (None,None)
         return self.tokens[self.curr_index+1]
+    def peek_val(self) -> str:
+        """Returns the next token without consuming it."""
+        if not self.has_more_tokens():
+            return None
+        return self.tokens[self.curr_index+1][0]
+    def peek_type(self) -> str:
+        """Returns the next token without consuming it."""
+        if not self.has_more_tokens():
+            return None
+        return self.tokens[self.curr_index+1][1]
