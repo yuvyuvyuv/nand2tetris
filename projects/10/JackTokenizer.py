@@ -176,16 +176,15 @@ class JackTokenizer:
                         # check if oneliner
                         elif next == "/":
                             comment_flag = False
-                            #skip = len(line)-i-1
                             break
 
                 # nomore edge cases
 
-                if curr_mode == "INT_CONST":
+                if int_mode:
                     if not self.str_is_int(c):
                         tokens.append((buffer,"INT_CONST"))
                         buffer = ""
-                        curr_mode = ""
+                        int_mode = False
 
 
                 # check if symbol token
@@ -216,7 +215,7 @@ class JackTokenizer:
                     continue
                 
                 if self.str_is_int(c) and buffer == "":
-                    curr_mode = "INT_CONST"
+                    int_mode = True
                 
 
                         
@@ -339,3 +338,8 @@ class JackTokenizer:
             return int(self.curr_tok[0])
 
         pass
+    def peek_token(self) -> str:
+        """Returns the next token without consuming it."""
+        if not self.has_more_tokens():
+            return None
+        return self.tokens[self.curr_index+1]
