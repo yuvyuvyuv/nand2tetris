@@ -20,9 +20,12 @@ class CompilationEngine:
         :param input_stream: The input stream.
         :param output_stream: The output stream.
         """
+        self.tokenizer = input_stream
+        self.output_stream = output_stream
         # Your code goes here!
         # Note that you can write to output_stream like so:
         # output_stream.write("Hello world! \n")
+
         pass
 
     def compile_class(self) -> None:
@@ -41,15 +44,39 @@ class CompilationEngine:
         You can assume that classes with constructors have at least one field,
         you will understand why this is necessary in project 11.
         """
-        # Your code goes here!
-        pass
+        self.tokenizer.advance()  # Consume the subroutine type (method, function, or constructor)
+        self.tokenizer.advance()  # Consume the return type
+        self.tokenizer.advance()  # Consume the subroutine name
+        self.tokenizer.advance()  # Consume the opening parenthesis "("
+        self.compile_parameter_list()  # Compile the parameter list
+        self.tokenizer.advance()  # Consume the closing parenthesis ")"
+        self.tokenizer.advance()  # Consume the opening curly brace "{"
+        self.compile_var_dec()  # Compile the variable declarations
+        self.compile_statements()  # Compile the statements
+        self.tokenizer.advance()  # Consume the closing curly brace "}"
+
+    def peek_token(self) -> str:
+        """Returns the next token without consuming it."""
+        return self.tokenizer.peek()
 
     def compile_parameter_list(self) -> None:
         """Compiles a (possibly empty) parameter list, not including the 
         enclosing "()".
         """
         # Your code goes here!
+        parameters = []
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token() != ")":
+            parameter_type = self.tokenizer.advance()  # Consume the parameter type
+            parameter_name = self.tokenizer.advance()  # Consume the parameter name
+            parameters.append((parameter_type, parameter_name))
+            if self.tokenizer.peek_token() == ",":
+                self.tokenizer.advance()  # Consume the comma ","
+        self.tokenizer.advance()  # Consume the closing parenthesis ")"
         pass
+
+    def peek_token(self) -> str:
+        """Returns the next token without consuming it."""
+        return self.tokenizer.peek()
 
     def compile_var_dec(self) -> None:
         """Compiles a var declaration."""
@@ -57,15 +84,31 @@ class CompilationEngine:
         pass
 
     def compile_statements(self) -> None:
+        
         """Compiles a sequence of statements, not including the enclosing 
         "{}".
         """
-        # Your code goes here!
-        pass
+        while self.tokenizer.has_more_tokens() and self.tokenizer.peek_token() != "}":
+            token = self.tokenizer.peek_token()
+            if token == "let":
+                self.compile_let()
+            elif token == "if":
+                self.compile_if()
+            elif token == "while":
+                self.compile_while()
+            elif token == "do":
+                self.compile_do()
+            elif token == "return":
+                self.compile_return()
+            else:
+                break
 
     def compile_do(self) -> None:
         """Compiles a do statement."""
         # Your code goes here!
+        self.tokenizer.advance()  # Consume the "do" keyword
+        self.compile_subroutine()  # Compile the subroutine call
+        self.tokenizer.advance()  # Consume the ";" symbol
         pass
 
     def compile_let(self) -> None:
