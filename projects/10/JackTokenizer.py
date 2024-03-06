@@ -98,78 +98,16 @@ class JackTokenizer:
         Args:
             input_stream (typing.TextIO): input stream.
         """
-        # Your code goes here!
-        # A good place to start is to read all the lines of the input:
-        self.tokens = []
 
         input_lines = input_stream.read().splitlines()
-        comment_flag = False
-        string_const_flag = False
-        for line in input_lines:
-            buffer = ""
-            for i in range(len(line)):
-                c = line[i]
+        self.tokens = self.tokenize(input_lines)
+        self.curr_tok = None
+        self.curr_index = 0
+        self.len = len(self.tokens)
 
-                # alot of edge cases
-
-                # find end of string const
-                if string_const_flag:
-                    # if end of string const, append string buffer and clean
-                    if c == "\"":
-                        string_const_flag = False
-                        self.tokens.append((buffer,"STRING_CONST"))
-                        buffer = ""
-                        continue
-                    # add to string buffer
-                    buffer += c
-                    continue
-                # start of string
-                if c == "\"":
-                    string_const_flag = True
-                    continue
-
-                # find end of mult line comment
-                if comment_flag:
-                    if c == "*":
-                        if i < len(line)-2:
-                            next = line[i+1] 
-                            if next == "/":
-                                comment_flag = False
-                                continue
-                    continue
-
-                # find start of comment 
-                if c == "/":
-                    if i < len(line)-2:
-                        next = line[i+1] 
-                        # check if multi line
-                        if next == "*":
-                            comment_flag = True
-                            continue
-                        # check if oneliner
-                        elif next == "/":
-                            break
-                
-                # nomore edge cases
-
-                # check if symbol token
-                if c in symbol_token:
-                    self.tokens.append((c,"SYMBOL"))
-
-                # if whitespace end of buffer and check cases
-                if c.isspace():
-                    if buffer == "":
-                        continue
-                    if buffer in keyword_token:
-                        self.tokens.append((buffer,"KEYWORD"))
-                    elif self.str_is_int(buffer):
-                        self.tokens.append((buffer,"INT_CONST"))
-                    else:
-                        self.tokens.append((buffer,"IDENTIFIER"))
-                    continue
-
-                buffer += c
-                
+       
+    def tokenize(self, input_lines) -> list:
+        
         keyword_token = ['class','constructor','function','method'
                          ,'field','static','var','int','char'
                          ,'boolean','void','true','false','null'
@@ -183,8 +121,110 @@ class JackTokenizer:
         # identifier: A sequence of letters, digits, and underscore ('_') not 
         #          starting with a digit. You can assume keywords cannot be
         #          identifiers, so 'self' cannot be an identifier, etc'.
+        tokens = []
+        comment_flag = False
+        string_const_flag = False
+        for line in input_lines:
+            buffer = ""
+            curr_mode = ""
+            skip = 0
+            for i in range(len(line)):
+                c = line[i]
+                if skip > 0:
+                    skip -= 1
+                    continue
 
-       
+                # alot of edge cases
+
+                # find end of string const
+                if string_const_flag:
+                    # if end of string const, append string buffer and clean
+                    if c == "\"":
+                        string_const_flag = False
+                        tokens.append((buffer,"STRING_CONST"))
+                        buffer = ""
+                        continue
+                    # add to string buffer
+                    buffer += c
+                    continue
+                # start of string
+                if c == "\"":
+                    if not comment_flag:
+                        string_const_flag = True
+                    continue
+
+                # find end of mult line comment
+                if comment_flag:
+                    if c == "*":
+                        if i < len(line)-1:
+                            next = line[i+1]
+                            if next == "/":
+                                comment_flag = False
+                                skip = 1
+                                continue
+                    continue
+
+                # find start of comment 
+                if c == "/":
+                    if i < len(line)-1:
+                        next = line[i+1]
+                        # check if multi line
+                        if next == "*":
+                            comment_flag = True
+                            skip = 1
+                            continue
+                        # check if oneliner
+                        elif next == "/":
+                            comment_flag = False
+                            #skip = len(line)-i-1
+                            break
+
+                # nomore edge cases
+
+                if curr_mode == "INT_CONST":
+                    if not self.str_is_int(c):
+                        tokens.append((buffer,"INT_CONST"))
+                        buffer = ""
+                        curr_mode = ""
+
+
+                # check if symbol token
+                if c in symbol_token:
+                    if buffer != "":
+                        if buffer in keyword_token:
+                            tokens.append((buffer,"KEYWORD"))
+                        elif self.str_is_int(buffer):
+                            tokens.append((buffer,"INT_CONST"))
+                        else:
+                            tokens.append((buffer,"IDENTIFIER"))
+                        buffer = ""
+                    tokens.append((c,"SYMBOL"))
+                    
+                    continue
+                
+                # if whitespace end of buffer and check cases
+                if c.isspace():
+                    if buffer == "":
+                        continue
+                    if buffer in keyword_token:
+                        tokens.append((buffer,"KEYWORD"))
+                    elif self.str_is_int(buffer):
+                        tokens.append((buffer,"INT_CONST"))
+                    else:
+                        tokens.append((buffer,"IDENTIFIER"))
+                    buffer = ""
+                    continue
+                
+                if self.str_is_int(c) and buffer == "":
+                    curr_mode = "INT_CONST"
+                
+
+                        
+
+                buffer += c
+
+        return tokens
+
 
     def str_is_int(self, s: str) -> bool:
         try:
@@ -200,7 +240,7 @@ class JackTokenizer:
             bool: True if there are more tokens, False otherwise.
         """
         # Your code goes here!
-        
+        return self.curr_index < self.len
         pass
 
     def advance(self) -> None:
@@ -209,6 +249,10 @@ class JackTokenizer:
         Initially there is no current token.
         """
         # Your code goes here!
+        if self.has_more_tokens():
+            self.curr_index += 1
+            self.curr_tok = self.tokens[self.curr_index]
+        
         pass
         
     def token_type(self) -> str:
@@ -218,6 +262,7 @@ class JackTokenizer:
             "KEYWORD", "SYMBOL", "IDENTIFIER", "INT_CONST", "STRING_CONST"
         """
         # Your code goes here!
+        return self.curr_tok[1]
         pass
 
     def keyword(self) -> str:
@@ -230,6 +275,8 @@ class JackTokenizer:
             "IF", "ELSE", "WHILE", "RETURN", "TRUE", "FALSE", "NULL", "THIS"
         """
         # Your code goes here!
+        if self.token_type() == "KEYWORD":
+            return self.curr_tok[0]
 
         pass
 
@@ -243,6 +290,9 @@ class JackTokenizer:
               '-' | '*' | '/' | '&' | '|' | '<' | '>' | '=' | '~' | '^' | '#'
         """
         # Your code goes here!
+        if self.token_type() == "SYMBOL":
+            return self.curr_tok[0]
+
         pass
 
     def identifier(self) -> str:
@@ -255,7 +305,10 @@ class JackTokenizer:
                   starting with a digit. You can assume keywords cannot be
                   identifiers, so 'self' cannot be an identifier, etc'.
         """
-        # Your code goes here!
+        # Your code goes here!        
+        if self.token_type() == "IDENTIFIER":
+            return self.curr_tok[0]
+
         pass
 
     def int_val(self) -> int:
@@ -267,8 +320,9 @@ class JackTokenizer:
             Recall that integerConstant was defined in the grammar like so:
             integerConstant: A decimal number in the range 0-32767.
         """
-        return int(self.current_token)
         # Your code goes here!
+        if self.token_type() == "INT_CONST":
+            return int(self.curr_tok[0])
         pass
 
     def string_val(self) -> str:
@@ -281,4 +335,7 @@ class JackTokenizer:
                       double quote or newline '"'
         """
         # Your code goes here!
+        if self.token_type() == "STRING_CONST":
+            return int(self.curr_tok[0])
+
         pass
