@@ -19,7 +19,7 @@ class VMWriter:
         # Note that you can write to output_stream like so:
         # output_stream.write("Hello world! \n")
         self.output_stream = output_stream
-        self.commands = {            
+        self.commands = {
             "ADD": "add",
             "SUB": "sub",
             "NEG": "neg",
@@ -29,9 +29,29 @@ class VMWriter:
             "AND": "and",
             "OR": "or",
             "NOT": "not",
+            "MULL": "call Math.multiply 2",
+            "DIV": "call Math.divide 2",
             "SHIFTLEFT": "shl",
             "SHIFTRIGHT": "shr"
         }
+        self.binCommands = {
+            "+": "add",
+            "-": "sub",
+            "=": "eq",
+            ">": "gt",
+            "<": "lt",
+            "&": "and",
+            "|": "or",
+            "*": "call Math.multiply 2",
+            "/": "call Math.divide 2",
+            "<<": "shl",
+            ">>": "shr"
+        }
+        self.unCommands = {
+            "-": "neg",
+            "~": "not"
+        }
+
         pass
 
     def write_push(self, segment: str, index: int) -> None:
@@ -68,7 +88,25 @@ class VMWriter:
         # Your code goes here!
         self.output_stream.write(f"{self.commands[command]}\n")
         pass
+    def write_unary(self, command: str) -> None:
+        """Writes a VM unary command.
 
+        Args:
+            command (str): the command to write, can be "NEG", "NOT".
+        """
+        # Your code goes here!
+        self.output_stream.write(f"{self.unCommands[command]}\n")
+        pass
+    def write_binary(self, command: str) -> None:
+        """Writes a VM binary command.
+
+        Args:
+            command (str): the command to write, can be "ADD", "SUB", "EQ", "GT", 
+            "LT", "AND", "OR", "SHIFTLEFT", "SHIFTRIGHT".
+        """
+        # Your code goes here!
+        self.output_stream.write(f"{self.binCommands[command]}\n")
+        pass
     def write_label(self, label: str) -> None:
         """Writes a VM label command.
 
@@ -107,6 +145,7 @@ class VMWriter:
             n_args (int): the number of arguments the function receives.
         """
         # Your code goes here!
+        self.output_stream.write(f"call {name} {n_args}\n")
         pass
 
     def write_function(self, name: str, n_locals: int) -> None:
@@ -117,9 +156,11 @@ class VMWriter:
             n_locals (int): the number of local variables the function uses.
         """
         # Your code goes here!
+        self.output_stream.write(f"function {name} {n_locals}\n")
         pass
 
     def write_return(self) -> None:
         """Writes a VM return command."""
         # Your code goes here!
+        self.output_stream.write("return\n")
         pass

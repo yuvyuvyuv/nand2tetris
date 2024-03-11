@@ -28,6 +28,7 @@ def compile_file(
     tokenizer = JackTokenizer(input_file)
     engine = CompilationEngine(tokenizer, output_file)
     engine.compile_class()
+    print("Compilation complete.")
     pass
 
 
