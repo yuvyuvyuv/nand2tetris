@@ -18,6 +18,20 @@ class VMWriter:
         # Your code goes here!
         # Note that you can write to output_stream like so:
         # output_stream.write("Hello world! \n")
+        self.output_stream = output_stream
+        self.commands = {            
+            "ADD": "add",
+            "SUB": "sub",
+            "NEG": "neg",
+            "EQ": "eq",
+            "GT": "gt",
+            "LT": "lt",
+            "AND": "and",
+            "OR": "or",
+            "NOT": "not",
+            "SHIFTLEFT": "shl",
+            "SHIFTRIGHT": "shr"
+        }
         pass
 
     def write_push(self, segment: str, index: int) -> None:
@@ -29,6 +43,7 @@ class VMWriter:
             index (int): the index to push to.
         """
         # Your code goes here!
+        self.output_stream.write(f"push {segment} {index}\n")
         pass
 
     def write_pop(self, segment: str, index: int) -> None:
@@ -40,6 +55,7 @@ class VMWriter:
             index (int): the index to pop from.
         """
         # Your code goes here!
+        self.output_stream.write(f"pop {segment} {index}\n")
         pass
 
     def write_arithmetic(self, command: str) -> None:
@@ -50,6 +66,7 @@ class VMWriter:
             "EQ", "GT", "LT", "AND", "OR", "NOT", "SHIFTLEFT", "SHIFTRIGHT".
         """
         # Your code goes here!
+        self.output_stream.write(f"{self.commands[command]}\n")
         pass
 
     def write_label(self, label: str) -> None:
@@ -59,6 +76,7 @@ class VMWriter:
             label (str): the label to write.
         """
         # Your code goes here!
+        self.output_stream.write(f"label {label}\n")
         pass
 
     def write_goto(self, label: str) -> None:
@@ -68,6 +86,7 @@ class VMWriter:
             label (str): the label to go to.
         """
         # Your code goes here!
+        self.output_stream.write(f"goto {label}\n")
         pass
 
     def write_if(self, label: str) -> None:
@@ -77,6 +96,7 @@ class VMWriter:
             label (str): the label to go to.
         """
         # Your code goes here!
+        self.output_stream.write(f"if-goto {label}\n")
         pass
 
     def write_call(self, name: str, n_args: int) -> None:
