@@ -27,38 +27,31 @@ class CompilationEngine:
         """
         self.tokenizer = input_stream
         self.output_stream = output_stream
-        # Your code goes here!
-        # Note that you can write to output_stream like so:
-        # output_stream.write("Hello world! \n")
+        
+
         self.VMWriter = VMWriter(output_stream)
         self.SymbolTable = SymbolTable()
         self.class_name = ""
         self.subroutine_name = ""
-        self.tab_conut = 0
         pass
     
-    def write_start(self, input) -> None:
-        t = "  " * self.tab_conut
-        #self.output_stream.write(t+f"<{input}>\n")
-        self.tab_conut +=1
-       
-    def write_end(self, input) -> None:
-        self.tab_conut -=1
-        t = "  " * self.tab_conut
-        #self.output_stream.write(t+f"</{input}>\n")
-        
+    
     def advance(self) -> None:
         self.tokenizer.advance()
-        #self.terminal_write()
+
           
     def compile_class(self) -> None:
-        """Compiles a complete class."""
+        """Compiles a complete class.
+        class className {
+            classVarDec*
+            subroutineDec*
+        }
+        """
         self.advance()  # Consume the "class" keyword
         self.class_name = self.tokenizer.identifier()
         self.advance()  # Consume the className
         self.advance()  # Consume the "{" keyword
         
-        print(self.tokenizer.keyword())
         while self.tokenizer.keyword() in ["static", "field"]:            
             self.compile_class_var_dec()  # Compile the class variable declarations
         
@@ -66,36 +59,23 @@ class CompilationEngine:
             self.compile_subroutine()  # Compile the subroutines
         
         self.advance()  # Consume the "}" keyword
-        
-        #print(self.SymbolTable.subroutine_table)
-        #print("class table:----------------------------------------------")
-        #print(self.SymbolTable.class_table)
-        #print("endfile")
-        
+    
+
     def compile_class_var_dec(self) -> None:
-        """Compiles a static declaration or a field declaration."""
-        var_kind = self.tokenizer.peek_val().upper()
-        self.advance()  #  static,field
-        var_type = self.tokenizer.peek_val()
-        self.advance()  #  variable type
-        var_name = self.tokenizer.peek_val()
-        self.advance()  #  variable name
-        self.SymbolTable.define(var_name,var_type,var_kind)
+        self.compile_vars()
 
 
-        while self.tokenizer.peek_val() == ",":
-            self.advance()  #  comma ","
-            var_name = self.tokenizer.peek_val()
-            self.advance()  #  variable name
-            self.SymbolTable.define(var_name,var_type,var_kind)
-            
-        self.advance()  #  the semicolon ";"
-          
     def compile_subroutine(self) -> None:
         """
         Compiles a complete method, function, or constructor.
-        You can assume that classes with constructors have at least one field,
-        you will understand why this is necessary in project 11.
+        You can assume that classes with constructors have at least one field.
+
+        a decleration of a subroutine
+
+        (constructor|function|method)  (void|type) subroutineName ( paramaterList ){
+            varDec*
+            statment*
+        }
         """
         self.SymbolTable.start_subroutine()
 
@@ -109,8 +89,6 @@ class CompilationEngine:
         self.advance()  # Consume the return type
         self.subroutine_name = self.tokenizer.identifier()
         self.advance()  # Consume the subroutine name
-
-        
         self.advance()  # Consume the opening parenthesis "("
         self.compile_parameter_list()  # Compile the parameter list
         self.advance()  # Consume the closing parenthesis ")"
@@ -120,6 +98,7 @@ class CompilationEngine:
             self.compile_var_dec()  # Compile the variable declarations
 
         self.VMWriter.write_function(f"{self.class_name}.{self.subroutine_name}",self.SymbolTable.var_count("VAR"))
+
         if subroutine_type == "constructor":
             self.VMWriter.write_push("CONST",self.SymbolTable.var_count("FIELD"))
             self.VMWriter.write_call("Memory.alloc",1)
@@ -145,6 +124,10 @@ class CompilationEngine:
         # Your code goes here
         while self.tokenizer.symbol() != ")":
             var_type = self.tokenizer.keyword()
+            if var_type == None:
+                print(self.tokenizer.identifier())
+                var_type = self.tokenizer.identifier()
+
             self.advance()  # Consume the parameter type
             var_name = self.tokenizer.identifier()
             self.advance()  # Consume the parameter name
@@ -153,26 +136,35 @@ class CompilationEngine:
                 self.advance()  # Consume the comma ","
 
     def compile_var_dec(self) -> None:
+        self.compile_vars()
+    def compile_vars(self) -> None:
         """Compiles a var declaration."""
         # Your code goes here!
        
-        self.advance()  #  to variable type
+        var_kind = self.tokenizer.keyword().upper() #  static,field
+        self.advance()  
+        var_type = self.tokenizer.keyword()  #  variable type
+        if var_type == None:
+            var_type = self.tokenizer.identifier()
+            
+        self.advance() 
+        var_name = self.tokenizer.identifier()  #  variable name
 
-        var_type = self.tokenizer.keyword()
-        self.advance()  #  to variable name
-        var_name = self.tokenizer.identifier()
-        self.SymbolTable.define(var_name,var_type,"LOCAL")
-
-        self.advance()  # to the next token
+        self.advance() 
+        self.SymbolTable.define(var_name,var_type,var_kind)
+        # page 20 - mapping vars, location of variable changes its saved adrress
+        #!!!!!!
 
         while self.tokenizer.symbol() == ",":
-            self.advance()  #  to variable name
+            self.advance()  #  comma ","
             var_name = self.tokenizer.identifier()
-            self.advance()  #  to comma or semicolon
-            self.SymbolTable.define(var_name,var_type,"LOCAL")
-
+            self.advance()  #  variable name
+            self.SymbolTable.define(var_name,var_type,var_kind)
+            
         self.advance()  #  the semicolon ";"
-        pass
+
+
+
         
     def compile_statements(self) -> None:
         
@@ -205,24 +197,24 @@ class CompilationEngine:
             self.advance()
             num_of_exp = self.compile_expression_list()
             self.VMWriter.write_call(f"{self.class_name}.{name}",num_of_exp) #maybe not class_name, maybe +1
-            #maybe need to eat the )
+            self.advance() # eat the )
         elif self.tokenizer.symbol() == ".":
             self.advance() # eat the .
             sub_name = self.tokenizer.identifier()
             self.advance() # eat the name
             self.advance() # eat the (
+            if self.SymbolTable.kind_of(name) != None:
+                self.VMWriter.write_push(self.SymbolTable.kind_of(name),self.SymbolTable.index_of(name))
             num_of_exp = self.compile_expression_list()
             self.VMWriter.write_call(f"{name}.{sub_name}",num_of_exp)
             self.advance() # eat the )
         self.advance()  # Consume the ";" symbol
-        print ("do is pver")
 
     def compile_let(self) -> None:
         """Compiles a let statement."""
         self.advance()  # Consume the "let" keyword
         var_name = self.tokenizer.identifier()
         self.advance()  # Consume the variable name
-        self.SymbolTable.print_data(var_name)
 
         # needs changing
         if self.tokenizer.symbol() == "[":
@@ -233,7 +225,6 @@ class CompilationEngine:
 
         self.advance()  # Consume the equals sign "="
         self.compile_expression()  # Compile the expression on the right side of the equals sign
-        print (self.SymbolTable.kind_of(var_name), "var_name_____________________&&&&")
         self.VMWriter.write_pop(self.SymbolTable.kind_of(var_name),self.SymbolTable.index_of(var_name))
 
         self.advance()  # Consume the semicolon ";"
@@ -266,7 +257,6 @@ class CompilationEngine:
     def compile_return(self) -> None:
         """Compiles a return statement."""
         self.advance()  # Consume the "return" keyword
-
         if self.tokenizer.symbol() != ";":
             self.compile_expression()  # Compile the expression to be returned
         self.VMWriter.write_return()
@@ -324,9 +314,6 @@ class CompilationEngine:
         part of this term and should not be advanced over.
         """
         # Your code goes here!
-        token_type = self.tokenizer.peek_type()
-        token_val = self.tokenizer.peek_val()
-        #print(token_val,token_type, "term_________________________")
         
         if self.tokenizer.int_val() != None: #token is an integer
             self.VMWriter.write_push("CONST",self.tokenizer.int_val())
@@ -350,11 +337,11 @@ class CompilationEngine:
             self.advance()
         elif self.tokenizer.identifier() != None: #token is an identifier
             token_val = self.tokenizer.identifier()
-            self.SymbolTable.print_data(token_val)
             self.advance()
             if self.tokenizer.symbol() == "[":
+                #needs to be written!!!!!!!
                 self.advance()
-                self.compile_expression()#needs to be written!!!!!!!
+                self.compile_expression()
                 self.advance()
 
             elif self.tokenizer.symbol() == "(":
@@ -364,10 +351,13 @@ class CompilationEngine:
                 self.advance() # eat the )
 
             elif self.tokenizer.symbol() == ".":
+                #????????
                 self.advance() # eat the .
                 sub_name = self.tokenizer.identifier()
                 self.advance() # eat the name
-                self.advance() # eat the (
+                self.advance() # eat the (       
+                if self.SymbolTable.kind_of(token_val) != None:
+                    self.VMWriter.write_push(self.SymbolTable.kind_of(token_val),self.SymbolTable.index_of(token_val))
                 num_of_exp = self.compile_expression_list()
                 self.VMWriter.write_call(f"{token_val}.{sub_name}",num_of_exp)
                 self.advance() # eat the )
@@ -382,7 +372,6 @@ class CompilationEngine:
                 self.advance()
             else:
                 self.advance()
-                print(token_val)
                 self.compile_term()
                 self.VMWriter.write_unary(token_val)
 

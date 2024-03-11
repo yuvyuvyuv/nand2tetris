@@ -71,7 +71,9 @@ class VMWriter:
             "THIS": "this",
             "THAT": "that",
             "POINTER": "pointer",
-            "TEMP": "temp"
+            "TEMP": "temp",
+            "VAR": "local",
+            "FIELD" : "this"
         }
         self.output_stream.write(f"push {commands[segment]} {index}\n")
         #self.output_stream.write(f"push {segment} {index}\n")
@@ -93,7 +95,9 @@ class VMWriter:
             "THIS": "this",
             "THAT": "that",
             "POINTER": "pointer",
-            "TEMP": "temp"
+            "TEMP": "temp",
+            "VAR": "local",
+            "FIELD" : "this"
         }
         # Your code goes here!
         self.output_stream.write(f"pop {commands[segment]} {index}\n")
@@ -156,6 +160,7 @@ class VMWriter:
             label (str): the label to go to.
         """
         # Your code goes here!
+        self.label_counter += 1
         self.output_stream.write(f"if-goto {label}\n")
         pass
 

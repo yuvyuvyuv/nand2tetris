@@ -30,7 +30,6 @@ class SymbolTable:
         symbol table).
         """
         # Your code goes here!
-        print(self.subroutine_table)
         self.subroutine_table = {}
         self.index_arg = 0
         self.index_var = 0
@@ -76,8 +75,6 @@ class SymbolTable:
                 index = self.index_var
                 self.index_var += 1
             self.subroutine_table[name] = [type, kind, index]
-        print("defiend a new variable: ")
-        self.print_data(name)
         pass
 
     def var_count(self, kind: str) -> int:

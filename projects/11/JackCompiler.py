@@ -15,7 +15,7 @@ from VMWriter import VMWriter
 
 
 def compile_file(
-        input_file: typing.TextIO, output_file: typing.TextIO) -> None:
+        input_file: typing.TextIO, output_file: typing.TextIO,filename) -> None:
     """Compiles a single file.
 
     Args:
@@ -28,7 +28,7 @@ def compile_file(
     tokenizer = JackTokenizer(input_file)
     engine = CompilationEngine(tokenizer, output_file)
     engine.compile_class()
-    print("Compilation complete.")
+    print("file ",filename[filename.rfind('\\')+1:], " Compilation complete.")
     pass
 
 
@@ -54,4 +54,4 @@ if "__main__" == __name__:
         output_path = filename + ".vm"
         with open(input_path, 'r') as input_file, \
                 open(output_path, 'w') as output_file:
-            compile_file(input_file, output_file)
+            compile_file(input_file, output_file,filename)
