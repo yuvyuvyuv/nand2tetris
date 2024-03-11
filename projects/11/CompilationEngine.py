@@ -116,7 +116,7 @@ class CompilationEngine:
         self.advance()  # Consume the closing parenthesis ")"
 
         self.advance()  # Consume the opening curly brace "{"
-        while self.tokenizer.peek_val() == "var":
+        while self.tokenizer.keyword() == "var":
             self.compile_var_dec()  # Compile the variable declarations
 
         self.VMWriter.write_function(f"{self.class_name}.{self.subroutine_name}",self.SymbolTable.var_count("VAR"))
@@ -136,7 +136,7 @@ class CompilationEngine:
         
         if ret_type == "void":
             self.VMWriter.write_push("CONST",0)
-        self.VMWriter.write_return()
+            self.VMWriter.write_return()
 
     def compile_parameter_list(self) -> None:
         """Compiles a (possibly empty) parameter list, not including the 
@@ -156,20 +156,20 @@ class CompilationEngine:
         """Compiles a var declaration."""
         # Your code goes here!
        
-        self.advance()  #  var
+        self.advance()  #  to variable type
 
-        var_type = self.tokenizer.peek_val()
-        self.advance()  #  variable type
-        var_name = self.tokenizer.peek_val()
-        self.advance()  #  variable name
+        var_type = self.tokenizer.keyword()
+        self.advance()  #  to variable name
+        var_name = self.tokenizer.identifier()
+        self.SymbolTable.define(var_name,var_type,"LOCAL")
 
-        self.SymbolTable.define(var_name,var_type,"VAR")
+        self.advance()  # to the next token
 
-        while self.tokenizer.peek_val() == ",":
-            self.advance()  #  comma ","
-            var_name = self.tokenizer.peek_val()
-            self.advance()  #  variable name
-            self.SymbolTable.define(var_name,var_type,"VAR")
+        while self.tokenizer.symbol() == ",":
+            self.advance()  #  to variable name
+            var_name = self.tokenizer.identifier()
+            self.advance()  #  to comma or semicolon
+            self.SymbolTable.define(var_name,var_type,"LOCAL")
 
         self.advance()  #  the semicolon ";"
         pass
@@ -205,6 +205,7 @@ class CompilationEngine:
             self.advance()
             num_of_exp = self.compile_expression_list()
             self.VMWriter.write_call(f"{self.class_name}.{name}",num_of_exp) #maybe not class_name, maybe +1
+            #maybe need to eat the )
         elif self.tokenizer.symbol() == ".":
             self.advance() # eat the .
             sub_name = self.tokenizer.identifier()
@@ -219,29 +220,48 @@ class CompilationEngine:
     def compile_let(self) -> None:
         """Compiles a let statement."""
         self.advance()  # Consume the "let" keyword
-        var_name = self.tokenizer.peek_val()
+        var_name = self.tokenizer.identifier()
         self.advance()  # Consume the variable name
         self.SymbolTable.print_data(var_name)
-        if self.tokenizer.peek_val() == "[":
+
+        # needs changing
+        if self.tokenizer.symbol() == "[":
             self.advance()  # Consume the opening square bracket "["
             self.compile_expression()  # Compile the expression inside the square brackets
             self.advance()  # Consume the closing square bracket "]"
 
+
         self.advance()  # Consume the equals sign "="
         self.compile_expression()  # Compile the expression on the right side of the equals sign
+        print (self.SymbolTable.kind_of(var_name), "var_name_____________________&&&&")
+        self.VMWriter.write_pop(self.SymbolTable.kind_of(var_name),self.SymbolTable.index_of(var_name))
+
         self.advance()  # Consume the semicolon ";"
 
     def compile_while(self) -> None:
         """Compiles a while statement."""
         # Your code goes here!
+        L1 = "WHILE_START"+str(self.VMWriter.label_counter)
+        L2 = "WHILE_END"+str(self.VMWriter.label_counter)
+        self.VMWriter.write_label(L1)
+
+
         self.advance()  # Consume the "while" keyword
         self.advance()  # Consume the opening parenthesis "("
         self.compile_expression()  # Compile the condition expression
+
+        self.VMWriter.write_arithmetic("NOT")
+        self.VMWriter.write_if(L2)
         self.advance()  # Consume the closing parenthesis ")"
         self.advance()  # Consume the opening curly brace "{"
         self.compile_statements()  # Compile the statements inside the while loop
         self.advance()  # Consume the closing curly brace "}"
-        pass
+
+        self.VMWriter.write_goto(L1)
+
+        self.VMWriter.write_label(L2)
+        
+
 
     def compile_return(self) -> None:
         """Compiles a return statement."""
@@ -249,25 +269,37 @@ class CompilationEngine:
 
         if self.tokenizer.symbol() != ";":
             self.compile_expression()  # Compile the expression to be returned
-
+        self.VMWriter.write_return()
         self.advance()  # Consume the semicolon ";"
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
         # Your code goes here!
+        L1 = "IF_START"+str(self.VMWriter.label_counter)
+        L2 = "IF_END"+str(self.VMWriter.label_counter)
+
+
         self.advance()  # Consume the "if" keyword
         self.advance()  # Consume the opening parenthesis "("
         self.compile_expression()  # Compile the condition expression
+        
+        self.VMWriter.write_arithmetic("NOT")
+
+        self.VMWriter.write_if(L1)
         self.advance()  # Consume the closing parenthesis ")"
         self.advance()  # Consume the opening curly brace "{"
         self.compile_statements()  # Compile the statements inside the if block
         self.advance()  # Consume the closing curly brace "}"
 
-        if self.tokenizer.peek_val() == "else":
+        self.VMWriter.write_goto(L2)
+        self.VMWriter.write_label(L1)
+        if self.tokenizer.keyword() == "else":
             self.advance()  # Consume the "else" keyword
             self.advance()  # Consume the opening curly brace "{"
             self.compile_statements()  # Compile the statements inside the else block
             self.advance()  # Consume the closing curly brace "}"       
+        self.VMWriter.write_label(L2)
+        
     
 
 
@@ -276,7 +308,6 @@ class CompilationEngine:
         self.compile_term()  # Compile the first term of the expression
         op_val = self.tokenizer.symbol()
         while op_val in ["+", "-", "*", "/", "&", "|", "<", ">", "="]:
-            print(op_val, "opexpression_________________________")
             self.advance()  # Consume the operator
             self.compile_term()  # Compile the next term of the expression
             self.VMWriter.write_binary(op_val)
@@ -295,7 +326,7 @@ class CompilationEngine:
         # Your code goes here!
         token_type = self.tokenizer.peek_type()
         token_val = self.tokenizer.peek_val()
-        print(token_val,token_type, "term_________________________")
+        #print(token_val,token_type, "term_________________________")
         
         if self.tokenizer.int_val() != None: #token is an integer
             self.VMWriter.write_push("CONST",self.tokenizer.int_val())
@@ -325,18 +356,24 @@ class CompilationEngine:
                 self.advance()
                 self.compile_expression()#needs to be written!!!!!!!
                 self.advance()
+
             elif self.tokenizer.symbol() == "(":
                 self.advance()
-                self.compile_expression_list()#needs to be written!!!!!!!!
-                self.advance()
+                num_of_exp = self.compile_expression_list()
+                self.VMWriter.write_call(f"{self.class_name}.{token_val}",num_of_exp) #maybe not class_name, maybe +1
+                self.advance() # eat the )
+
             elif self.tokenizer.symbol() == ".":
-                self.advance()                    
-                self.advance()#needs to be written!!!!!!
-                self.advance()
-                self.compile_expression_list()
-                self.advance()
+                self.advance() # eat the .
+                sub_name = self.tokenizer.identifier()
+                self.advance() # eat the name
+                self.advance() # eat the (
+                num_of_exp = self.compile_expression_list()
+                self.VMWriter.write_call(f"{token_val}.{sub_name}",num_of_exp)
+                self.advance() # eat the )
             else:
                 self.VMWriter.write_push(self.SymbolTable.kind_of(token_val),self.SymbolTable.index_of(token_val))
+            
         elif self.tokenizer.symbol() != None: #token is symbol - then is
             token_val = self.tokenizer.symbol()
             if token_val == "(":

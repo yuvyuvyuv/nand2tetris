@@ -32,6 +32,8 @@ class SymbolTable:
         # Your code goes here!
         print(self.subroutine_table)
         self.subroutine_table = {}
+        self.index_arg = 0
+        self.index_var = 0
         pass
     
     def print_data(self, name: str) -> None:
@@ -114,7 +116,7 @@ class SymbolTable:
             ret = self.class_table.get(name)
         if ret == None:
             return ret
-        return ret[0]
+        return ret[1]
 
     def type_of(self, name: str) -> str:
         """
@@ -130,7 +132,7 @@ class SymbolTable:
             ret = self.class_table.get(name)
         if ret == None:
             return ret
-        return ret[1]
+        return ret[0]
         pass
 
     def index_of(self, name: str) -> int:

@@ -51,7 +51,7 @@ class VMWriter:
             "-": "neg",
             "~": "not"
         }
-
+        self.label_counter = 0
         pass
 
     def write_push(self, segment: str, index: int) -> None:
@@ -63,7 +63,18 @@ class VMWriter:
             index (int): the index to push to.
         """
         # Your code goes here!
-        self.output_stream.write(f"push {segment} {index}\n")
+        commands = {
+            "CONST": "constant",
+            "ARG": "argument",
+            "LOCAL": "local",
+            "STATIC": "static",
+            "THIS": "this",
+            "THAT": "that",
+            "POINTER": "pointer",
+            "TEMP": "temp"
+        }
+        self.output_stream.write(f"push {commands[segment]} {index}\n")
+        #self.output_stream.write(f"push {segment} {index}\n")
         pass
 
     def write_pop(self, segment: str, index: int) -> None:
@@ -74,8 +85,18 @@ class VMWriter:
             "LOCAL", "STATIC", "THIS", "THAT", "POINTER", "TEMP".
             index (int): the index to pop from.
         """
+        commands = {
+            "CONST": "constant",
+            "ARG": "argument",
+            "LOCAL": "local",
+            "STATIC": "static",
+            "THIS": "this",
+            "THAT": "that",
+            "POINTER": "pointer",
+            "TEMP": "temp"
+        }
         # Your code goes here!
-        self.output_stream.write(f"pop {segment} {index}\n")
+        self.output_stream.write(f"pop {commands[segment]} {index}\n")
         pass
 
     def write_arithmetic(self, command: str) -> None:
@@ -114,6 +135,7 @@ class VMWriter:
             label (str): the label to write.
         """
         # Your code goes here!
+        self.label_counter += 1
         self.output_stream.write(f"label {label}\n")
         pass
 
