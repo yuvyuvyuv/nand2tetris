@@ -10,21 +10,17 @@ import sys
 import typing
 from CompilationEngine import CompilationEngine
 from JackTokenizer import JackTokenizer
-from SymbolTable import SymbolTable
-from VMWriter import VMWriter
 
 
-def compile_file(
+def analyze_file(
         input_file: typing.TextIO, output_file: typing.TextIO) -> None:
-    """Compiles a single file.
-
+    """Analyzes a single file.
     Args:
-        input_file (typing.TextIO): the file to compile.
+        input_file (typing.TextIO): the file to analyze.
         output_file (typing.TextIO): writes all output to this file.
     """
     # Your code goes here!
-    # This function should be relatively similar to "analyze_file" in
-    # JackAnalyzer.py from the previous project.
+    # It might be good to start by creating a new JackTokenizer and CompilationEngine:
     tokenizer = JackTokenizer(input_file)
     engine = CompilationEngine(tokenizer, output_file)
     engine.compile_class()
@@ -32,13 +28,13 @@ def compile_file(
 
 
 if "__main__" == __name__:
-    # Parses the input path and calls compile_file on each input file.
+    # Parses the input path and calls analyze_file on each input file.
     # This opens both the input and the output files!
     # Both are closed automatically when the code finishes running.
     # If the output file does not exist, it is created automatically in the
     # correct path, using the correct filename.
     if not len(sys.argv) == 2:
-        sys.exit("Invalid usage, please use: JackCompiler <input path>")
+        sys.exit("Invalid usage, please use: JackAnalyzer <input path>")
     argument_path = os.path.abspath(sys.argv[1])
     if os.path.isdir(argument_path):
         files_to_assemble = [
@@ -50,7 +46,7 @@ if "__main__" == __name__:
         filename, extension = os.path.splitext(input_path)
         if extension.lower() != ".jack":
             continue
-        output_path = filename + ".vm"
+        output_path = filename +"_test" + ".xml"
         with open(input_path, 'r') as input_file, \
                 open(output_path, 'w') as output_file:
-            compile_file(input_file, output_file)
+            analyze_file(input_file, output_file)
