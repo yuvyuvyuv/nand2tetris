@@ -87,15 +87,14 @@ class SymbolTable:
             the current scope.
         """
         # Your code goes here!
-        match kind:
-            case "STATIC":
-                return self.index_static
-            case "FIELD":
-                return self.index_field
-            case "ARG":
-                return self.index_arg
-            case "VAR":
-                return self.index_var
+        if kind == "STATIC":
+            return self.index_static
+        elif kind == "FIELD":
+            return self.index_field
+        elif kind == "ARG":
+            return self.index_arg
+        elif kind == "VAR":
+            return self.index_var
         pass
 
     def kind_of(self, name: str) -> str:

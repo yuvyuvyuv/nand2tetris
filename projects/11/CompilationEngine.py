@@ -126,7 +126,6 @@ class CompilationEngine:
         while self.tokenizer.symbol() != ")":
             var_type = self.tokenizer.keyword()
             if var_type == None:
-                print(self.tokenizer.identifier())
                 var_type = self.tokenizer.identifier()
 
             self.advance()  # Consume the parameter type

@@ -28,7 +28,7 @@ def compile_file(
     tokenizer = JackTokenizer(input_file)
     engine = CompilationEngine(tokenizer, output_file)
     engine.compile_class()
-    print("file ",filename[filename.rfind('\\')+1:], " Compilation complete.")
+    # print("file ",filename[filename.rfind('\\')+1:], " Compilation complete.")
     pass
 
 
