@@ -19,7 +19,7 @@ class VMWriter:
         # Note that you can write to output_stream like so:
         # output_stream.write("Hello world! \n")
         self.output_stream = output_stream
-        self.commands = {
+        self.ArithmeticCommands = {
             "ADD": "add",
             "SUB": "sub",
             "NEG": "neg",
@@ -52,6 +52,18 @@ class VMWriter:
             "~": "not"
         }
         self.label_counter = 0
+        self.commands = {
+            "CONST": "constant",
+            "ARG": "argument",
+            "LOCAL": "local",
+            "STATIC": "static",
+            "THIS": "this",
+            "THAT": "that",
+            "POINTER": "pointer",
+            "TEMP": "temp",
+            "VAR": "local",
+            "FIELD" : "this"
+        }
         pass
 
     def write_push(self, segment: str, index: int) -> None:
@@ -63,19 +75,8 @@ class VMWriter:
             index (int): the index to push to.
         """
         # Your code goes here!
-        commands = {
-            "CONST": "constant",
-            "ARG": "argument",
-            "LOCAL": "local",
-            "STATIC": "static",
-            "THIS": "this",
-            "THAT": "that",
-            "POINTER": "pointer",
-            "TEMP": "temp",
-            "VAR": "local",
-            "FIELD" : "this"
-        }
-        self.output_stream.write(f"push {commands[segment]} {index}\n")
+        
+        self.output_stream.write(f"push {self.commands[segment]} {index}\n")
         #self.output_stream.write(f"push {segment} {index}\n")
         pass
 
@@ -87,20 +88,8 @@ class VMWriter:
             "LOCAL", "STATIC", "THIS", "THAT", "POINTER", "TEMP".
             index (int): the index to pop from.
         """
-        commands = {
-            "CONST": "constant",
-            "ARG": "argument",
-            "LOCAL": "local",
-            "STATIC": "static",
-            "THIS": "this",
-            "THAT": "that",
-            "POINTER": "pointer",
-            "TEMP": "temp",
-            "VAR": "local",
-            "FIELD" : "this"
-        }
-        # Your code goes here!
-        self.output_stream.write(f"pop {commands[segment]} {index}\n")
+        
+        self.output_stream.write(f"pop {self.commands[segment]} {index}\n")
         pass
 
     def write_arithmetic(self, command: str) -> None:
@@ -111,7 +100,7 @@ class VMWriter:
             "EQ", "GT", "LT", "AND", "OR", "NOT", "SHIFTLEFT", "SHIFTRIGHT".
         """
         # Your code goes here!
-        self.output_stream.write(f"{self.commands[command]}\n")
+        self.output_stream.write(f"{self.ArithmeticCommands[command]}\n")
         pass
     def write_unary(self, command: str) -> None:
         """Writes a VM unary command.

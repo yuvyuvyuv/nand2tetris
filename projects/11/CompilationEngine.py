@@ -85,6 +85,7 @@ class CompilationEngine:
 
         if subroutine_type == "method":
             self.SymbolTable.define("this", self.class_name,"ARG")
+
         ret_type = self.tokenizer.keyword()
         self.advance()  # Consume the return type
         self.subroutine_name = self.tokenizer.identifier()
@@ -137,6 +138,7 @@ class CompilationEngine:
 
     def compile_var_dec(self) -> None:
         self.compile_vars()
+    
     def compile_vars(self) -> None:
         """Compiles a var declaration."""
         # Your code goes here!
@@ -163,7 +165,7 @@ class CompilationEngine:
             
         self.advance()  #  the semicolon ";"
 
-
+    
 
         
     def compile_statements(self) -> None:
@@ -193,21 +195,8 @@ class CompilationEngine:
         name = self.tokenizer.identifier()
         self.advance() # name
         # Compile the subroutine call
-        if self.tokenizer.symbol() == "(":
-            self.advance()
-            num_of_exp = self.compile_expression_list()
-            self.VMWriter.write_call(f"{self.class_name}.{name}",num_of_exp) #maybe not class_name, maybe +1
-            self.advance() # eat the )
-        elif self.tokenizer.symbol() == ".":
-            self.advance() # eat the .
-            sub_name = self.tokenizer.identifier()
-            self.advance() # eat the name
-            self.advance() # eat the (
-            if self.SymbolTable.kind_of(name) != None:
-                self.VMWriter.write_push(self.SymbolTable.kind_of(name),self.SymbolTable.index_of(name))
-            num_of_exp = self.compile_expression_list()
-            self.VMWriter.write_call(f"{name}.{sub_name}",num_of_exp)
-            self.advance() # eat the )
+        if self.tokenizer.symbol() in ["(","."]:
+            self.compile_subroutine_call(name)
         self.advance()  # Consume the ";" symbol
 
     def compile_let(self) -> None:
@@ -339,28 +328,10 @@ class CompilationEngine:
             token_val = self.tokenizer.identifier()
             self.advance()
             if self.tokenizer.symbol() == "[":
-                #needs to be written!!!!!!!
-                self.advance()
-                self.compile_expression()
-                self.advance()
-
-            elif self.tokenizer.symbol() == "(":
-                self.advance()
-                num_of_exp = self.compile_expression_list()
-                self.VMWriter.write_call(f"{self.class_name}.{token_val}",num_of_exp) #maybe not class_name, maybe +1
-                self.advance() # eat the )
-
-            elif self.tokenizer.symbol() == ".":
-                #????????
-                self.advance() # eat the .
-                sub_name = self.tokenizer.identifier()
-                self.advance() # eat the name
-                self.advance() # eat the (       
-                if self.SymbolTable.kind_of(token_val) != None:
-                    self.VMWriter.write_push(self.SymbolTable.kind_of(token_val),self.SymbolTable.index_of(token_val))
-                num_of_exp = self.compile_expression_list()
-                self.VMWriter.write_call(f"{token_val}.{sub_name}",num_of_exp)
-                self.advance() # eat the )
+                compile_array_usage(token_val)
+                
+            elif self.tokenizer.symbol() in ["(","."]: #token is subroutine call
+                self.compile_subroutine_call(token_val)
             else:
                 self.VMWriter.write_push(self.SymbolTable.kind_of(token_val),self.SymbolTable.index_of(token_val))
             
@@ -374,6 +345,45 @@ class CompilationEngine:
                 self.advance()
                 self.compile_term()
                 self.VMWriter.write_unary(token_val)
+    def compile_array_usage(self,arrName) -> None:
+        # push the adrees of arr[exp]
+        self.VMWriter.write_push(self.SymbolTable.kind_of(arrName),self.SymbolTable.index_of(arrName))
+        self.compile_expression()
+        self.VMWriter.write_arithmetic("ADD")
+        
+        self.advance()# eat the ]
+
+
+
+        
+        pass
+
+    def compile_subroutine_call(self, name) -> None:
+        """Compiles a subroutine call."""
+        # Your code goes here!
+        if self.tokenizer.symbol() == "(":
+                self.advance()
+                self.VMWriter.write_push("POINTER",0)
+                num_of_exp = self.compile_expression_list()
+                self.VMWriter.write_call(f"{self.class_name}.{name}",num_of_exp+1) #maybe not class_name, maybe +1
+                self.advance() # eat the )
+
+        elif self.tokenizer.symbol() == ".":
+            self.advance() # eat the .
+            sub_name = self.tokenizer.identifier()
+            self.advance() # eat the name
+            self.advance() # eat the ( 
+                  
+            meth = 0
+            if self.SymbolTable.kind_of(name) != None:
+                self.VMWriter.write_push(self.SymbolTable.kind_of(name),self.SymbolTable.index_of(name))
+                name = self.SymbolTable.type_of(name)
+                meth = 1
+            num_of_exp = self.compile_expression_list() + meth
+
+            self.VMWriter.write_call(f"{name}.{sub_name}",num_of_exp)
+            self.advance() # eat the )
+        pass
 
     def compile_expression_list(self) -> int:
         """Compiles a (possibly empty) comma-separated list of expressions."""
