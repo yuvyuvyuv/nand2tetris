@@ -207,15 +207,18 @@ class CompilationEngine:
 
         # needs changing
         if self.tokenizer.symbol() == "[":
-            self.advance()  # Consume the opening square bracket "["
-            self.compile_expression()  # Compile the expression inside the square brackets
-            self.advance()  # Consume the closing square bracket "]"
-
-
-        self.advance()  # Consume the equals sign "="
-        self.compile_expression()  # Compile the expression on the right side of the equals sign
-        self.VMWriter.write_pop(self.SymbolTable.kind_of(var_name),self.SymbolTable.index_of(var_name))
-
+            self.compile_array_usage(var_name)
+            self.advance()  # Consume the equals sign "="
+            self.compile_expression()  # Compile the expression on the right side of the equals sign
+            self.VMWriter.write_pop("TEMP",0)
+            self.VMWriter.write_pop("POINTER",1)
+            self.VMWriter.write_push("TEMP",0)
+            self.VMWriter.write_pop("THAT",0)
+        else:
+            self.advance()  # Consume the equals sign "="
+            self.compile_expression()  # Compile the expression on the right side of the equals sign
+            self.VMWriter.write_pop(self.SymbolTable.kind_of(var_name),self.SymbolTable.index_of(var_name))
+            
         self.advance()  # Consume the semicolon ";"
 
     def compile_while(self) -> None:
@@ -328,7 +331,9 @@ class CompilationEngine:
             token_val = self.tokenizer.identifier()
             self.advance()
             if self.tokenizer.symbol() == "[":
-                compile_array_usage(token_val)
+                self.compile_array_usage(token_val)
+                self.VMWriter.write_pop("POINTER",1)
+                self.VMWriter.write_push("THAT",0)
                 
             elif self.tokenizer.symbol() in ["(","."]: #token is subroutine call
                 self.compile_subroutine_call(token_val)
@@ -345,18 +350,14 @@ class CompilationEngine:
                 self.advance()
                 self.compile_term()
                 self.VMWriter.write_unary(token_val)
+
     def compile_array_usage(self,arrName) -> None:
         # push the adrees of arr[exp]
         self.VMWriter.write_push(self.SymbolTable.kind_of(arrName),self.SymbolTable.index_of(arrName))
+        self.advance() # eat the [
         self.compile_expression()
         self.VMWriter.write_arithmetic("ADD")
-        
         self.advance()# eat the ]
-
-
-
-        
-        pass
 
     def compile_subroutine_call(self, name) -> None:
         """Compiles a subroutine call."""

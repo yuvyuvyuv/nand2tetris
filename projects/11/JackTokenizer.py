@@ -335,7 +335,7 @@ class JackTokenizer:
         """
         # Your code goes here!
         if self.token_type() == "stringConstant":
-            return int(self.curr_tok[0])
+            return str(self.curr_tok[0])
 
         pass
     def peek_token(self) -> str:
