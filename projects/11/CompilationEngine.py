@@ -143,7 +143,7 @@ class CompilationEngine:
         """Compiles a var declaration."""
         # Your code goes here!
        
-        var_kind = self.tokenizer.keyword().upper() #  static,field
+        var_kind = self.tokenizer.keyword().upper() #  static,field,var
         self.advance()  
         var_type = self.tokenizer.keyword()  #  variable type
         if var_type == None:
@@ -218,7 +218,7 @@ class CompilationEngine:
             self.advance()  # Consume the equals sign "="
             self.compile_expression()  # Compile the expression on the right side of the equals sign
             self.VMWriter.write_pop(self.SymbolTable.kind_of(var_name),self.SymbolTable.index_of(var_name))
-            
+
         self.advance()  # Consume the semicolon ";"
 
     def compile_while(self) -> None:
