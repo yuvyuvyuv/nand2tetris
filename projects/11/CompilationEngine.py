@@ -196,6 +196,7 @@ class CompilationEngine:
         # Compile the subroutine call
         if self.tokenizer.symbol() in ["(","."]:
             self.compile_subroutine_call(name)
+        self.VMWriter.write_pop("TEMP",0) #YANK
         self.advance()  # Consume the ";" symbol
 
     def compile_let(self) -> None:
