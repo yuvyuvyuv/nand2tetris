@@ -49,7 +49,9 @@ class VMWriter:
         }
         self.unCommands = {
             "-": "neg",
-            "~": "not"
+            "~": "not",
+            "^": "shl",
+            "#": "shr"
         }
         self.label_counter = 0
         self.commands = {
